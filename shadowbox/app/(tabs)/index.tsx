@@ -1,16 +1,17 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, ImageBackground, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { theme } from "../theme";
-import { SBCard } from "../ui/SBCard";
 
-export default function Home() {
+export default function HomeScreen() {
   return (
-    <View style={styles.container}>
+    <ImageBackground
+      source={require("../../assets/images/ring-bg.png")}
+      style={styles.container}
+      resizeMode="cover"
+    >
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={{ color: "#fff", fontWeight: "800" }}>S</Text>
-        </View>
+        <View style={styles.avatar} />
         <View>
           <Text style={styles.hello}>Hola,</Text>
           <Text style={styles.name}>Oier</Text>
@@ -19,106 +20,148 @@ export default function Home() {
 
       {/* Stats */}
       <View style={styles.statsRow}>
-        <SBCard style={styles.statCard}>
-          <Text style={styles.statLabel}>Sesiones completadas</Text>
+        <View style={styles.statCard}>
+          <Ionicons name="hand-left" size={26} color="#4da3ff" />
+          <Text style={styles.statText}>Sesiones</Text>
           <Text style={styles.statValue}>18</Text>
-          <Text style={styles.statSub}>/20 esta semana</Text>
-        </SBCard>
+        </View>
 
-        <SBCard style={styles.statCard}>
-          <Text style={styles.statLabel}>Tiempo entrenado</Text>
+        <View style={styles.statCard}>
+          <Ionicons name="time-outline" size={26} color="#ff9f43" />
+          <Text style={styles.statText}>Tiempo</Text>
           <Text style={styles.statValue}>4h 30m</Text>
-          <Text style={styles.statSub}>esta semana</Text>
-        </SBCard>
+        </View>
       </View>
 
-      {/* Grid buttons */}
+      {/* Grid */}
       <View style={styles.grid}>
-        <Pressable style={[styles.bigCard, styles.blueGlow]} onPress={() => router.push("/workout")}>
-          <Text style={styles.bigTitle}>Entrenar{`\n`}ahora</Text>
-        </Pressable>
-
         <Pressable
-          style={[styles.bigCard, styles.orangeGlow]}
+          style={[styles.card, styles.blueGlow]}
           onPress={() => router.push("/(tabs)/train")}
         >
-          <Text style={styles.bigTitle}>Generar{`\n`}plan</Text>
+          <Ionicons name="hand-left-outline" size={42} color="#4da3ff" />
+          <Text style={styles.cardText}>Entrenar ahora</Text>
         </Pressable>
 
         <Pressable
-          style={[styles.bigCard, styles.blueGlow]}
+          style={[styles.card, styles.orangeGlow]}
+          onPress={() => router.push("/generate")}
+        >
+          <Ionicons name="target-outline" size={42} color="#ff9f43" />
+          <Text style={styles.cardText}>Generar plan</Text>
+        </Pressable>
+
+        <Pressable
+          style={[styles.card, styles.blueGlow]}
           onPress={() => router.push("/(tabs)/community")}
         >
-          <Text style={styles.bigTitle}>Comunidad</Text>
+          <Ionicons name="people-outline" size={42} color="#4da3ff" />
+          <Text style={styles.cardText}>Comunidad</Text>
         </Pressable>
 
         <Pressable
-          style={[styles.bigCard, styles.orangeGlow]}
-          onPress={() => router.push("/progress")}
+          style={[styles.card, styles.orangeGlow]}
+          onPress={() => router.push("/(tabs)/progress")}
         >
-          <Text style={styles.bigTitle}>Progreso</Text>
+          <Ionicons name="bar-chart-outline" size={42} color="#ff9f43" />
+          <Text style={styles.cardText}>Progreso</Text>
         </Pressable>
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.bg,
-    padding: 18,
-    paddingTop: 26,
+    padding: 20,
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    marginBottom: 18,
+    marginBottom: 20,
   },
+
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.colors.card,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#111",
+    marginRight: 12,
     borderWidth: 2,
-    borderColor: theme.colors.orange,
-    alignItems: "center",
-    justifyContent: "center",
+    borderColor: "#ff9f43",
   },
-  hello: { color: theme.colors.muted, fontSize: 16 },
-  name: { color: theme.colors.text, fontSize: 26, fontWeight: "800" },
 
-  statsRow: { flexDirection: "row", gap: 12, marginBottom: 18 },
-  statCard: { flex: 1 },
-  statLabel: { color: theme.colors.muted, fontSize: 12, marginBottom: 6 },
-  statValue: { color: theme.colors.text, fontSize: 22, fontWeight: "800" },
-  statSub: { color: theme.colors.muted, fontSize: 12, marginTop: 2 },
+  hello: {
+    color: "#ccc",
+    fontSize: 16,
+  },
 
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  bigCard: {
+  name: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 24,
+  },
+
+  statCard: {
+    flex: 1,
+    marginHorizontal: 6,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 16,
+    padding: 14,
+    alignItems: "center",
+  },
+
+  statText: {
+    color: "#aaa",
+    fontSize: 12,
+    marginTop: 6,
+  },
+
+  statValue: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+
+  card: {
     width: "48%",
     height: 140,
+    backgroundColor: "rgba(0,0,0,0.65)",
     borderRadius: 20,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 16,
     justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
   },
-  bigTitle: { color: "#fff", fontSize: 20, fontWeight: "800" },
+
+  cardText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 10,
+    textAlign: "center",
+  },
 
   blueGlow: {
-    shadowColor: theme.colors.blue,
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    elevation: 8,
+    borderWidth: 2,
+    borderColor: "#4da3ff",
   },
+
   orangeGlow: {
-    shadowColor: theme.colors.orange,
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    elevation: 8,
+    borderWidth: 2,
+    borderColor: "#ff9f43",
   },
 });
