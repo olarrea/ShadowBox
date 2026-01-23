@@ -5,7 +5,7 @@ import { router } from "expo-router";
 export default function ProgressScreen() {
   return (
     <ImageBackground
-      source={require("../assets/images/ring_bg.png")}
+      source={require("../assets/images/ring-bg.png")}
       style={styles.container}
       resizeMode="cover"
     >
