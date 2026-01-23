@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, ImageBackground, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
+
 
 export default function HomeScreen() {
   return (
@@ -43,13 +44,12 @@ export default function HomeScreen() {
           <Text style={styles.cardText}>Entrenar ahora</Text>
         </Pressable>
 
-        <Pressable
-          style={[styles.card, styles.orangeGlow]}
-          onPress={() => router.push("/generate")}
-        >
-          <Ionicons name="target-outline" size={42} color="#ff9f43" />
-          <Text style={styles.cardText}>Generar plan</Text>
-        </Pressable>
+        <Link href={{ pathname: "../generate" } as any} asChild>
+          <Pressable style={[styles.card, styles.orangeGlow]}>
+            <Ionicons name="navigate-outline" size={42} color="#ff9f43" />
+            <Text style={styles.cardText}>Generar plan</Text>
+          </Pressable>
+        </Link>
 
         <Pressable
           style={[styles.card, styles.blueGlow]}

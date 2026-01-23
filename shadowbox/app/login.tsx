@@ -10,7 +10,8 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
+
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -87,11 +88,14 @@ export default function LoginScreen() {
           </Pressable>
 
           {/* Link register */}
-          <Pressable onPress={() => router.push("/register")}>
-            <Text style={styles.link}>
-              ¿No tienes cuenta? <Text style={styles.linkStrong}>Regístrate</Text>
-            </Text>
-          </Pressable>
+          <Link href={{ pathname: "/register" } as any} asChild>
+            <Pressable>
+                <Text style={styles.link}>
+                ¿No tienes cuenta? <Text style={styles.linkStrong}>Regístrate</Text>
+                </Text>
+            </Pressable>
+            </Link>
+
         </View>
       </KeyboardAvoidingView>
     </ImageBackground>
