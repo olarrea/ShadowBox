@@ -42,7 +42,7 @@ export default function RegisterScreen() {
       return;
     }
 
-    router.replace("/login");
+    router.replace("./login" as any);
   }
 
   return (
