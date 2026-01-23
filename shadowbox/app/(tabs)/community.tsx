@@ -14,9 +14,9 @@ type CommunityPlan = {
   id: string;
   title: string;
   level: "Principiante" | "Intermedio" | "Avanzado";
-  rating: number; // 0..5
+  rating: number; 
   isFav: boolean;
-  author: string; // nombre para iniciales
+  author: string; 
 };
 
 const MOCK_PLANS: CommunityPlan[] = [

@@ -35,15 +35,13 @@ export default function GenerateScreen() {
   }
 
   function cycleDuration() {
-    // 30, 45, 60, 75
     const options = [30, 45, 60, 75];
     const idx = options.indexOf(duration);
     setDuration(options[(idx + 1) % options.length]);
   }
 
   function onGenerate() {
-    // PMV: por ahora no generamos real, solo navegamos a una pantalla futura
-    // Si no la tienes, comenta esta línea y ya.
+    
     router.push({ pathname: "/plan" } as any);
   }
 
