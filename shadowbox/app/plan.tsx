@@ -38,7 +38,7 @@ export default function PlanScreen() {
           <Text style={styles.weekText}>Semana 1 de 4</Text>
         </View>
 
-        {/* Cards */}
+        
         <PlanCard
           title="Shadowboxing"
           duration="10 minutos"

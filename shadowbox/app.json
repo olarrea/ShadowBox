@@ -4,7 +4,7 @@
     "slug": "shadowbox",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon.png", 
     "scheme": "shadowbox",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
