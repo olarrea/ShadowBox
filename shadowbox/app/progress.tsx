@@ -11,7 +11,6 @@ export default function ProgressScreen() {
     >
       <Text style={styles.title}>Progreso</Text>
 
-      {/* Nivel */}
       <View style={styles.levelContainer}>
         <View style={styles.circle}>
           <Text style={styles.levelText}>Nivel 5</Text>
@@ -19,7 +18,6 @@ export default function ProgressScreen() {
         </View>
       </View>
 
-      {/* Stats */}
       <View style={styles.statsRow}>
         <View style={styles.statCardBlue}>
           <Ionicons name="time-outline" size={28} color="#4da6ff" />
@@ -40,14 +38,12 @@ export default function ProgressScreen() {
         </View>
       </View>
 
-      {/* Tendencia fake */}
       <View style={styles.trendBox}>
         <Text style={styles.trendTitle}>Tendencia</Text>
         <View style={styles.fakeChart} />
         <Text style={styles.trendLabels}>Semana 1   Semana 2   Semana 3   Semana 4</Text>
       </View>
 
-      {/* Buttons */}
       <View style={styles.buttons}>
         <Pressable style={styles.btnBlue}>
           <Text style={styles.btnText}>Compartir</Text>

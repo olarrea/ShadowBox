@@ -56,7 +56,6 @@ export default function RegisterScreen() {
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {/* Logo */}
         <View style={styles.logoWrap}>
           <Text style={styles.logoShadow}>Shadow</Text>
           <Text style={styles.logoBox}>Box</Text>
@@ -70,7 +69,6 @@ export default function RegisterScreen() {
 
         <Text style={styles.title}>CREAR CUENTA</Text>
 
-        {/* Form */}
         <View style={styles.form}>
           <View style={styles.inputWrapBlue}>
             <Ionicons name="mail-outline" size={18} color="#4DA3FF" />
@@ -109,7 +107,6 @@ export default function RegisterScreen() {
             />
           </View>
 
-          {/* Nivel */}
           <View style={styles.levelWrap}>
             <Pressable
               style={styles.levelBtn}

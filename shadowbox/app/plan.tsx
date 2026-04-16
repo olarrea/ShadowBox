@@ -20,7 +20,6 @@ export default function PlanScreen() {
       imageStyle={{ opacity: 0.65 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <View style={styles.sbIcon}>
             <Text style={styles.sbText}>SB</Text>
