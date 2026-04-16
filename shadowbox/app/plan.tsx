@@ -70,7 +70,6 @@ export default function PlanScreen() {
           color="#FF7A00"
         />
 
-        {/* Footer */}
         <View style={styles.totalRow}>
           <Ionicons name="time-outline" size={20} color="#FF7A00" />
           <Text style={styles.totalText}>Duración total: 45 minutos</Text>

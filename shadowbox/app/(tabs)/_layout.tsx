@@ -18,7 +18,6 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontSize: 12 },
       }}
     >
-      {/* HOME */}
       <Tabs.Screen
         name="index"
         options={{
@@ -29,7 +28,6 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* ENTRENAR */}
       <Tabs.Screen
         name="train"
         options={{
@@ -40,7 +38,6 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* COMUNIDAD */}
       <Tabs.Screen
         name="community"
         options={{
@@ -51,7 +48,6 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* PERFIL */}
       <Tabs.Screen
         name="profile"
         options={{

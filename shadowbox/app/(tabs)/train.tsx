@@ -80,7 +80,6 @@ export default function TrainScreen() {
       imageStyle={{ opacity: 0.65 }}
     >
       <View style={styles.container}>
-        {/* Top bar (iconos) */}
         <View style={styles.topBar}>
           <Ionicons name="menu" size={22} color="rgba(255,255,255,0.8)" />
           <View style={styles.brandRow}>
@@ -93,7 +92,6 @@ export default function TrainScreen() {
           <View style={{ width: 22 }} />
         </View>
 
-        {/* Círculo con progreso + tiempo */}
         <View style={styles.centerWrap}>
           <ProgressRing progress={progress} />
 
@@ -106,7 +104,6 @@ export default function TrainScreen() {
           </View>
         </View>
 
-        {/* Ronda / estado */}
         <View style={styles.infoWrap}>
           <Text style={styles.roundText}>
             Ronda {round} de {TOTAL_ROUNDS}
@@ -118,13 +115,11 @@ export default function TrainScreen() {
           </View>
         </View>
 
-        {/* Título */}
         <Text style={styles.bigTitle}>
           <Text style={{ color: "#FFFFFF" }}>Shadow</Text>
           <Text style={{ color: "#FF7A00" }}>boxing</Text> 🥊
         </Text>
 
-        {/* Botones */}
         <View style={styles.actionsRow}>
           <Pressable style={[styles.bigBtn, styles.blueBtn]} onPress={togglePause}>
             <Ionicons name={isRunning ? "pause" : "play"} size={22} color="#FFFFFF" />
@@ -149,7 +144,6 @@ export default function TrainScreen() {
           </Pressable>
         </View>
 
-        {/* Mini barra inferior visual (sin cambiar tus tabs) */}
         <View style={styles.fakeBottomRow}>
           <Ionicons name="home" size={22} color="#FFFFFF" style={{ opacity: 0.95 }} />
           <Ionicons name="person" size={22} color="#FFFFFF" style={{ opacity: 0.6 }} />
@@ -167,13 +161,10 @@ function ProgressRing({ progress }: { progress: number }) {
 
   return (
     <View style={styles.ringWrap}>
-      {/* Anillo azul */}
       <View style={styles.ringBlue} />
 
-      {/* Anillo naranja encima (solo efecto visual) */}
       <View style={[styles.ringOrange, { opacity: orangeOpacity }]} />
 
-      {/* Centro oscuro */}
       <View style={styles.ringCenter} />
     </View>
   );

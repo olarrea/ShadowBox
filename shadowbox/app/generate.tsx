@@ -53,7 +53,6 @@ export default function GenerateScreen() {
       imageStyle={{ opacity: 0.65 }}
     >
       <View style={styles.container}>
-        {/* Header / logo pequeño */}
         <View style={styles.brandRow}>
           <View style={styles.brandIcon}>
             <Ionicons name="hand-left-outline" size={18} color="#FF7A00" />
@@ -67,7 +66,6 @@ export default function GenerateScreen() {
 
         <Text style={styles.title}>Generar plan</Text>
 
-        {/* Nivel */}
         <Text style={styles.label}>Nivel del usuario</Text>
 
         <Pressable style={styles.dropdownBtn} onPress={() => setOpenLevel((v) => !v)}>
@@ -97,7 +95,6 @@ export default function GenerateScreen() {
           </View>
         )}
 
-        {/* Objetivo */}
         <Text style={[styles.label, { marginTop: 16 }]}>Objetivo</Text>
         <View style={styles.chipsRow}>
           <Chip
@@ -120,7 +117,6 @@ export default function GenerateScreen() {
           />
         </View>
 
-        {/* Días */}
         <Text style={[styles.label, { marginTop: 16 }]}>Días por semana</Text>
         <View style={styles.controlCard}>
           <Text style={styles.controlValue}>{days}</Text>
@@ -140,20 +136,17 @@ export default function GenerateScreen() {
           <Ionicons name="calendar-outline" size={20} color="#2E8BFF" />
         </View>
 
-        {/* Duración */}
         <Text style={[styles.label, { marginTop: 16 }]}>Duración del entrenamiento</Text>
         <Pressable style={styles.controlCard} onPress={cycleDuration}>
           <Text style={styles.controlValue}>{durationLabel}</Text>
           <Ionicons name="time-outline" size={20} color="#2E8BFF" />
         </Pressable>
 
-        {/* Botón */}
         <Pressable style={styles.generateBtn} onPress={onGenerate}>
           <Ionicons name="hand-left" size={18} color="#FFFFFF" />
           <Text style={styles.generateText}>Generar plan</Text>
         </Pressable>
 
-        {/* Botón volver (opcional) */}
         <Pressable style={styles.backLink} onPress={() => router.back()}>
           <Text style={styles.backText}>Volver</Text>
         </Pressable>

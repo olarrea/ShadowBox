@@ -2,7 +2,6 @@ import { View, Text, StyleSheet, ImageBackground, Pressable } from "react-native
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 
-
 export default function HomeScreen() {
   return (
     <ImageBackground
@@ -10,7 +9,6 @@ export default function HomeScreen() {
       style={styles.container}
       resizeMode="cover"
     >
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.avatar} />
         <View>
@@ -19,7 +17,6 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Stats */}
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Ionicons name="hand-left" size={26} color="#4da3ff" />
@@ -34,17 +31,16 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Grid */}
       <View style={styles.grid}>
         <Pressable
           style={[styles.card, styles.blueGlow]}
-          onPress={() => router.push("/(tabs)/train")}
+          onPress={() => router.push("/train")}
         >
           <Ionicons name="hand-left-outline" size={42} color="#4da3ff" />
           <Text style={styles.cardText}>Entrenar ahora</Text>
         </Pressable>
 
-        <Link href={{ pathname: "../generate" } as any} asChild>
+        <Link href={{ pathname: "/generate" } as any} asChild>
           <Pressable style={[styles.card, styles.orangeGlow]}>
             <Ionicons name="navigate-outline" size={42} color="#ff9f43" />
             <Text style={styles.cardText}>Generar plan</Text>
@@ -53,7 +49,7 @@ export default function HomeScreen() {
 
         <Pressable
           style={[styles.card, styles.blueGlow]}
-          onPress={() => router.push("/(tabs)/community")}
+          onPress={() => router.push("/community")}
         >
           <Ionicons name="people-outline" size={42} color="#4da3ff" />
           <Text style={styles.cardText}>Comunidad</Text>
@@ -61,7 +57,7 @@ export default function HomeScreen() {
 
         <Pressable
           style={[styles.card, styles.orangeGlow]}
-          onPress={() => router.push("/(tabs)/progress")}
+          onPress={() => router.push("/progress")}
         >
           <Ionicons name="bar-chart-outline" size={42} color="#ff9f43" />
           <Text style={styles.cardText}>Progreso</Text>

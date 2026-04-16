@@ -43,7 +43,6 @@ export default function CommunityScreen() {
       imageStyle={{ opacity: 0.65 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Header */}
         <View style={styles.headerRow}>
           <Text style={styles.title}>Comunidad</Text>
 
@@ -52,7 +51,6 @@ export default function CommunityScreen() {
           </View>
         </View>
 
-        {/* Cards */}
         {plans.map((p) => (
           <View key={p.id} style={styles.card}>
             <View style={styles.cardTopRow}>
@@ -79,7 +77,6 @@ export default function CommunityScreen() {
                 </View>
               </View>
 
-              {/* Fav */}
               <Pressable onPress={() => toggleFav(p.id)} style={styles.favCol}>
                 <Ionicons
                   name={p.isFav ? "heart" : "heart-outline"}
@@ -90,7 +87,6 @@ export default function CommunityScreen() {
               </Pressable>
             </View>
 
-            {/* Button */}
             <Pressable
               style={styles.btn}
               onPress={() => router.push({ pathname: "/plan" } as any)}
