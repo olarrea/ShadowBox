@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebaseConfig";
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState("");
@@ -22,7 +24,7 @@ export default function RegisterScreen() {
   const [openLevel, setOpenLevel] = useState(false);
   const [error, setError] = useState("");
 
-  function onRegister() {
+  async function onRegister() {
     setError("");
 
     if (!email || !pass || !confirm) {
@@ -42,7 +44,12 @@ export default function RegisterScreen() {
       return;
     }
 
-    router.replace("./login" as any);
+    try {
+      await createUserWithEmailAndPassword(auth, email, pass);
+      router.replace("/login");
+    } catch (err: any) {
+      setError(err.message);
+    }
   }
 
   return (
@@ -107,37 +114,6 @@ export default function RegisterScreen() {
             />
           </View>
 
-          <View style={styles.levelWrap}>
-            <Pressable
-              style={styles.levelBtn}
-              onPress={() => setOpenLevel(!openLevel)}
-            >
-              <Text style={styles.levelText}>{level}</Text>
-              <Ionicons
-                name={openLevel ? "chevron-up" : "chevron-down"}
-                size={18}
-                color="#FF7A00"
-              />
-            </Pressable>
-
-            {openLevel && (
-              <View style={styles.levelDropdown}>
-                {["Principiante", "Intermedio", "Avanzado"].map((l) => (
-                  <Pressable
-                    key={l}
-                    style={styles.levelItem}
-                    onPress={() => {
-                      setLevel(l as any);
-                      setOpenLevel(false);
-                    }}
-                  >
-                    <Text style={styles.levelItemText}>{l}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            )}
-          </View>
-
           {!!error && <Text style={styles.error}>{error}</Text>}
 
           <Pressable style={styles.btn} onPress={onRegister}>
@@ -156,34 +132,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     justifyContent: "center",
   },
-
   logoWrap: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
   },
-  logoShadow: {
-    color: "#2E8BFF",
-    fontSize: 34,
-    fontWeight: "800",
-  },
-  logoBox: {
-    color: "#4DA3FF",
-    fontSize: 34,
-    fontWeight: "800",
-  },
-
+  logoShadow: { color: "#2E8BFF", fontSize: 34, fontWeight: "800" },
+  logoBox: { color: "#4DA3FF", fontSize: 34, fontWeight: "800" },
   title: {
     textAlign: "center",
     color: "#FFFFFF",
     fontSize: 18,
     marginBottom: 18,
-    letterSpacing: 1,
   },
-
   form: { gap: 14 },
-
   inputWrapBlue: {
     height: 52,
     borderRadius: 16,
@@ -194,59 +157,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 14,
   },
-  input: {
-    flex: 1,
-    marginLeft: 10,
-    color: "#FFFFFF",
-    fontSize: 16,
-  },
-
-  levelWrap: { marginTop: 4 },
-  levelBtn: {
-    height: 48,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#FF7A00",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 18,
-  },
-  levelText: { color: "#FF7A00", fontWeight: "700" },
-
-  levelDropdown: {
-    marginTop: 8,
-    backgroundColor: "rgba(0,0,0,0.85)",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#444",
-  },
-  levelItem: { padding: 12 },
-  levelItemText: {
-    color: "#FFFFFF",
-    textAlign: "center",
-    fontWeight: "600",
-  },
-
+  input: { flex: 1, marginLeft: 10, color: "#FFFFFF" },
   btn: {
     height: 56,
     borderRadius: 18,
     backgroundColor: "#FF7A00",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 10,
   },
-  btnText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-
-  error: {
-    color: "#FF6B6B",
-    textAlign: "center",
-    marginTop: 4,
-    fontWeight: "600",
-  },
+  btnText: { color: "#FFFFFF", fontSize: 18, fontWeight: "800" },
+  error: { color: "#FF6B6B", textAlign: "center" },
 });

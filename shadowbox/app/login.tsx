@@ -11,14 +11,15 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
-
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebaseConfig";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
 
-  function onLogin() {
+  async function onLogin() {
     setError("");
 
     if (!email.trim() || !pass.trim()) {
@@ -34,7 +35,12 @@ export default function LoginScreen() {
       return;
     }
 
-    router.replace("/(tabs)");
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      router.replace("/(tabs)");
+    } catch (err: any) {
+      setError("Correo o contraseña incorrectos.");
+    }
   }
 
   return (
@@ -49,13 +55,18 @@ export default function LoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.logoWrap}>
-          <Text style={styles.logoShadow}>Shado</Text>
-          <Text style={styles.logoBox}>wBox</Text>
+          <Text style={styles.logoShadow}>Shadow</Text>
+          <Text style={styles.logoBox}>Box</Text>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputWrapOrange}>
-            <Ionicons name="mail-outline" size={18} color="#FF7A00" style={styles.leftIcon} />
+            <Ionicons
+              name="mail-outline"
+              size={18}
+              color="#FF7A00"
+              style={styles.leftIcon}
+            />
             <TextInput
               placeholder="Correo electrónico"
               placeholderTextColor="rgba(255,255,255,0.55)"
@@ -68,7 +79,12 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.inputWrapOrange}>
-            <Ionicons name="lock-closed-outline" size={18} color="#FF7A00" style={styles.leftIcon} />
+            <Ionicons
+              name="lock-closed-outline"
+              size={18}
+              color="#FF7A00"
+              style={styles.leftIcon}
+            />
             <TextInput
               placeholder="Contraseña"
               placeholderTextColor="rgba(255,255,255,0.55)"
@@ -87,12 +103,12 @@ export default function LoginScreen() {
 
           <Link href={{ pathname: "/register" } as any} asChild>
             <Pressable>
-                <Text style={styles.link}>
-                ¿No tienes cuenta? <Text style={styles.linkStrong}>Regístrate</Text>
-                </Text>
+              <Text style={styles.link}>
+                ¿No tienes cuenta?{" "}
+                <Text style={styles.linkStrong}>Regístrate</Text>
+              </Text>
             </Pressable>
-            </Link>
-
+          </Link>
         </View>
       </KeyboardAvoidingView>
     </ImageBackground>
