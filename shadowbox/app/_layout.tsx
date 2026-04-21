@@ -10,6 +10,7 @@ export default function RootLayout() {
       <Stack.Screen name="plan" />
       <Stack.Screen name="progress" />
       <Stack.Screen name="edit-profile" />
+      <Stack.Screen name="training-session" />
     </Stack>
   );
 }

@@ -1,77 +1,16 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
   StyleSheet,
   ImageBackground,
   Pressable,
-  Platform,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
-const ROUND_SECONDS = 5 * 60; 
-const TOTAL_ROUNDS = 5;
-
-function pad2(n: number) {
-  return n.toString().padStart(2, "0");
-}
-
-function formatMMSS(totalSeconds: number) {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${pad2(m)}:${pad2(s)}`;
-}
-
-export default function TrainScreen() {
-  const [round, setRound] = useState(1);
-  const [isRest, setIsRest] = useState(true); 
-  const [isRunning, setIsRunning] = useState(true);
-  const [secondsLeft, setSecondsLeft] = useState(ROUND_SECONDS);
-
-  useEffect(() => {
-    if (!isRunning) return;
-
-    const id = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) return 0;
-        return s - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(id);
-  }, [isRunning]);
-
-  useEffect(() => {
-    if (secondsLeft === 0) {
-      setIsRunning(false);
-    }
-  }, [secondsLeft]);
-
-  const mmss = useMemo(() => formatMMSS(secondsLeft), [secondsLeft]);
-  const [mm, ss] = useMemo(() => mmss.split(":"), [mmss]);
-
-  const progress = useMemo(() => {
-    return secondsLeft / ROUND_SECONDS;
-  }, [secondsLeft]);
-
-  function togglePause() {
-    setIsRunning((v) => !v);
-  }
-
-  function nextRound() {
-    setSecondsLeft(ROUND_SECONDS);
-    setIsRunning(true);
-    setIsRest((r) => !r); 
-    setRound((r) => (r >= TOTAL_ROUNDS ? 1 : r + 1));
-  }
-
-  function finish() {
-    setIsRunning(false);
-    setSecondsLeft(ROUND_SECONDS);
-    setRound(1);
-    setIsRest(true);
-  }
-
+export default function TrainHubScreen() {
   return (
     <ImageBackground
       source={require("../../assets/images/ring-bg.png")}
@@ -79,233 +18,221 @@ export default function TrainScreen() {
       resizeMode="cover"
       imageStyle={{ opacity: 0.65 }}
     >
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.topBar}>
-          <Ionicons name="menu" size={22} color="rgba(255,255,255,0.8)" />
-          <View style={styles.brandRow}>
-            <Ionicons name="hand-left" size={22} color="#FF7A00" />
-            <Text style={styles.brand}>
-              <Text style={{ color: "#2E8BFF", fontWeight: "900" }}>Shado</Text>
-              <Text style={{ color: "#FF7A00", fontWeight: "900" }}>wBox</Text>
-            </Text>
-          </View>
-          <View style={{ width: 22 }} />
+          <Text style={styles.title}>Entrenar</Text>
+          <Ionicons name="barbell-outline" size={26} color="#FF7A00" />
         </View>
 
-        <View style={styles.centerWrap}>
-          <ProgressRing progress={progress} />
-
-          <View style={styles.timeOverlay}>
-            <Text style={styles.timeText}>
-              <Text style={styles.timeWhite}>{mm}</Text>
-              <Text style={styles.timeColon}>:</Text>
-              <Text style={styles.timeBlue}>{ss}</Text>
-            </Text>
+        <Pressable
+          style={styles.mainCard}
+          onPress={() => router.push({ pathname: "/training-session" } as any)}
+        >
+          <View>
+            <Text style={styles.mainCardSmall}>Plan actual</Text>
+            <Text style={styles.mainCardTitle}>Plan semanal de boxeo</Text>
+            <Text style={styles.mainCardInfo}>5 rondas · 45 min · Nivel 1</Text>
           </View>
-        </View>
 
-        <View style={styles.infoWrap}>
-          <Text style={styles.roundText}>
-            Ronda {round} de {TOTAL_ROUNDS}
-          </Text>
-
-          <View style={styles.restRow}>
-            <Ionicons name="walk-outline" size={18} color="rgba(255,255,255,0.85)" />
-            <Text style={styles.restText}>{isRest ? "Descanso" : "Trabajo"}</Text>
+          <View style={styles.playCircle}>
+            <Ionicons name="play" size={28} color="#fff" />
           </View>
-        </View>
+        </Pressable>
 
-        <Text style={styles.bigTitle}>
-          <Text style={{ color: "#FFFFFF" }}>Shadow</Text>
-          <Text style={{ color: "#FF7A00" }}>boxing</Text> 🥊
-        </Text>
+        <Text style={styles.sectionTitle}>Accesos rápidos</Text>
 
-        <View style={styles.actionsRow}>
-          <Pressable style={[styles.bigBtn, styles.blueBtn]} onPress={togglePause}>
-            <Ionicons name={isRunning ? "pause" : "play"} size={22} color="#FFFFFF" />
-            <Text style={styles.blueBtnText}>
-              {isRunning ? "Pausar" : "Continuar"}
-              {"\n"}
-              <Text style={{ fontWeight: "700" }}>/</Text>{" "}
-              <Text style={{ fontWeight: "700" }}>
-                {isRunning ? "Continuar" : "Pausar"}
-              </Text>
-            </Text>
+        <View style={styles.grid}>
+          <Pressable style={[styles.card, styles.blueCard]}>
+            <Ionicons name="download-outline" size={28} color="#2E8BFF" />
+            <Text style={styles.cardTitle}>Descargados</Text>
+            <Text style={styles.cardText}>Entrena sin conexión</Text>
           </Pressable>
 
-          <Pressable style={[styles.midBtn, styles.orangeBtn]} onPress={finish}>
-            <View style={styles.stopSquare} />
-            <Text style={styles.orangeBtnText}>Finalizar</Text>
+          <Pressable style={[styles.card, styles.orangeCard]}>
+            <Ionicons name="heart-outline" size={28} color="#FF7A00" />
+            <Text style={styles.cardTitle}>Favoritos</Text>
+            <Text style={styles.cardText}>Tus rutinas guardadas</Text>
           </Pressable>
 
-          <Pressable style={[styles.bigBtn, styles.whiteBtn]} onPress={nextRound}>
-            <Ionicons name="repeat" size={22} color="#2E8BFF" />
-            <Text style={styles.whiteBtnText}>Cambiar{"\n"}ronda</Text>
+          <Pressable style={[styles.card, styles.blueCard]}>
+            <Ionicons name="create-outline" size={28} color="#2E8BFF" />
+            <Text style={styles.cardTitle}>Mis entrenos</Text>
+            <Text style={styles.cardText}>Rutinas creadas por ti</Text>
+          </Pressable>
+
+          <Pressable style={[styles.card, styles.orangeCard]}>
+            <Ionicons name="add-circle-outline" size={28} color="#FF7A00" />
+            <Text style={styles.cardTitle}>Crear rutina</Text>
+            <Text style={styles.cardText}>Diseña un entrenamiento</Text>
           </Pressable>
         </View>
 
-        <View style={styles.fakeBottomRow}>
-          <Ionicons name="home" size={22} color="#FFFFFF" style={{ opacity: 0.95 }} />
-          <Ionicons name="person" size={22} color="#FFFFFF" style={{ opacity: 0.6 }} />
-          <Ionicons name="refresh" size={22} color="#FFFFFF" style={{ opacity: 0.6 }} />
+        <Text style={styles.sectionTitle}>Última sesión</Text>
+
+        <View style={styles.lastSessionCard}>
+          <View>
+            <Text style={styles.lastSessionTitle}>Shadowboxing básico</Text>
+            <Text style={styles.lastSessionInfo}>
+              Última vez: hoy · 5 rondas · 25 min
+            </Text>
+          </View>
+
+          <Pressable
+            style={styles.repeatBtn}
+            onPress={() => router.push({ pathname: "/training-session" } as any)}
+          >
+            <Text style={styles.repeatBtnText}>Repetir</Text>
+          </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </ImageBackground>
   );
 }
 
-
-function ProgressRing({ progress }: { progress: number }) {
-  
-  const orangeOpacity = Math.max(0.25, 1 - progress);
-
-  return (
-    <View style={styles.ringWrap}>
-      <View style={styles.ringBlue} />
-
-      <View style={[styles.ringOrange, { opacity: orangeOpacity }]} />
-
-      <View style={styles.ringCenter} />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: "#070A0F" },
-  container: { flex: 1, paddingHorizontal: 18, paddingTop: 14 },
+  bg: {
+    flex: 1,
+    backgroundColor: "#070A0F",
+  },
+
+  container: {
+    padding: 20,
+    paddingTop: 56,
+    paddingBottom: 30,
+  },
 
   topBar: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  brand: { color: "#FFFFFF", fontSize: 22, letterSpacing: 0.5 },
-
-  centerWrap: { alignItems: "center", marginTop: 10, marginBottom: 16 },
-  timeOverlay: {
-    position: "absolute",
-    top: 78,
     alignItems: "center",
-    justifyContent: "center",
-  },
-  timeText: { fontSize: 54, fontWeight: "900" },
-  timeWhite: { color: "#FFFFFF" },
-  timeBlue: { color: "#2E8BFF" },
-  timeColon: { color: "rgba(255,255,255,0.85)" },
-
-  ringWrap: {
-    width: 210,
-    height: 210,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ringBlue: {
-    position: "absolute",
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    borderWidth: 10,
-    borderColor: "#2E8BFF",
-    shadowColor: "#2E8BFF",
-    shadowOpacity: Platform.OS === "android" ? 0.25 : 0.35,
-    shadowRadius: 18,
-    elevation: 8,
-  },
-  ringOrange: {
-    position: "absolute",
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    borderWidth: 10,
-    borderColor: "#FF7A00",
-  },
-  ringCenter: {
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    marginBottom: 22,
   },
 
-  infoWrap: { alignItems: "center", gap: 6, marginBottom: 8 },
-  roundText: { color: "rgba(255,255,255,0.85)", fontSize: 18, fontWeight: "700" },
-  restRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  restText: { color: "rgba(255,255,255,0.75)", fontSize: 18, fontWeight: "700" },
-
-  bigTitle: {
-    textAlign: "center",
-    fontSize: 44,
+  title: {
+    color: "#fff",
+    fontSize: 30,
     fontWeight: "900",
-    marginTop: 8,
-    marginBottom: 18,
   },
 
-  actionsRow: {
+  mainCard: {
+    backgroundColor: "rgba(0,0,0,0.62)",
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: "rgba(255,122,0,0.55)",
+    padding: 20,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-end",
-    marginTop: 8,
+    alignItems: "center",
+    marginBottom: 24,
   },
 
-  bigBtn: {
-    width: 118,
-    height: 106,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-  },
-  blueBtn: {
-    backgroundColor: "#2E8BFF",
-  },
-  blueBtnText: {
-    color: "#FFFFFF",
-    textAlign: "center",
-    fontWeight: "900",
-    lineHeight: 18,
+  mainCardSmall: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
+    marginBottom: 4,
   },
 
-  midBtn: {
-    width: 118,
-    height: 106,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    borderWidth: 2,
-    borderColor: "rgba(255,122,0,0.35)",
-    backgroundColor: "rgba(255,122,0,0.20)",
+  mainCardTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "800",
+    marginBottom: 6,
   },
-  orangeBtn: {},
-  stopSquare: {
-    width: 22,
-    height: 22,
-    borderRadius: 4,
+
+  mainCardInfo: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 14,
+  },
+
+  playCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: "#FF7A00",
-  },
-  orangeBtnText: { color: "#FFFFFF", fontWeight: "900", fontSize: 16 },
-
-  whiteBtn: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "rgba(46,139,255,0.5)",
-  },
-  whiteBtnText: {
-    color: "#2E8BFF",
-    textAlign: "center",
-    fontWeight: "900",
-    lineHeight: 18,
-  },
-
-  fakeBottomRow: {
-    marginTop: "auto",
-    height: 60,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
     alignItems: "center",
-    justifyContent: "space-around",
+    justifyContent: "center",
+  },
+
+  sectionTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "800",
+    marginBottom: 14,
+    marginTop: 4,
+  },
+
+  grid: {
     flexDirection: "row",
-    paddingBottom: 10,
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginBottom: 22,
+  },
+
+  card: {
+    width: "48%",
+    minHeight: 140,
+    borderRadius: 18,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    padding: 16,
+    marginBottom: 14,
+    justifyContent: "space-between",
+  },
+
+  blueCard: {
+    borderWidth: 2,
+    borderColor: "rgba(46,139,255,0.55)",
+  },
+
+  orangeCard: {
+    borderWidth: 2,
+    borderColor: "rgba(255,122,0,0.55)",
+  },
+
+  cardTitle: {
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "800",
+    marginTop: 12,
+  },
+
+  cardText: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+    marginTop: 6,
+  },
+
+  lastSessionCard: {
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 18,
+    padding: 18,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+
+  lastSessionTitle: {
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "800",
+    marginBottom: 5,
+  },
+
+  lastSessionInfo: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+  },
+
+  repeatBtn: {
+    backgroundColor: "#2E8BFF",
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+
+  repeatBtnText: {
+    color: "#fff",
+    fontWeight: "800",
   },
 });
