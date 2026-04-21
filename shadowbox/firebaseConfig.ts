@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNnfva80knd8XxWl5dC6hpYDrbbVvdzNE",
@@ -7,9 +8,10 @@ const firebaseConfig = {
   projectId: "shadowbox-56302",
   storageBucket: "shadowbox-56302.firebasestorage.app",
   messagingSenderId: "727871873170",
-  appId: "1:727871873170:web:feffa1a344ed1ecd4dc64b"
+  appId: "1:727871873170:web:efffa1a344ed1ecd4dc64b",
 };
 
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
+export const db = getFirestore(app);

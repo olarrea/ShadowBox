@@ -1,7 +1,69 @@
-import { View, Text, StyleSheet, ImageBackground, Pressable, Image } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageBackground,
+  Pressable,
+  Image,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { auth, db } from "../../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { router } from "expo-router";
+
+type UserData = {
+  email?: string;
+  name?: string;
+  photo?: string | null;
+  sessions?: number;
+  totalTime?: number;
+  level?: number;
+};
 
 export default function ProfileScreen() {
+  const [userData, setUserData] = useState<UserData | null>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const user = auth.currentUser;
+
+        if (!user) return;
+
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          setUserData(userSnap.data() as UserData);
+        } else {
+          setUserData({
+            email: user.email || "Usuario",
+            name: user.email || "Usuario",
+            photo: null,
+            sessions: 0,
+            totalTime: 0,
+            level: 1,
+          });
+        }
+      } catch (error) {
+        console.log("Error al cargar perfil:", error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace("/login");
+    } catch (error) {
+      console.log("Error al cerrar sesión:", error);
+    }
+  };
+
   return (
     <ImageBackground
       source={require("../../assets/images/ring-bg.png")}
@@ -10,30 +72,35 @@ export default function ProfileScreen() {
       imageStyle={{ opacity: 0.7 }}
     >
       <View style={styles.header}>
-        <Image
-          source={{ uri: "https://i.pravatar.cc/150?img=3" }}
-          style={styles.avatar}
-        />
-        <Text style={styles.name}>Oier</Text>
-        <Text style={styles.level}>Nivel Intermedio</Text>
+        {userData?.photo ? (
+          <Image source={{ uri: userData.photo }} style={styles.avatar} />
+        ) : (
+          <View style={styles.defaultAvatar}>
+            <Ionicons name="person" size={48} color="white" />
+          </View>
+        )}
+
+        <Text style={styles.name}>
+          {userData?.name || userData?.email || "Usuario"}
+        </Text>
       </View>
 
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Ionicons name="flame-outline" size={24} color="#ff9f43" />
-          <Text style={styles.statNumber}>28</Text>
+          <Text style={styles.statNumber}>{userData?.sessions ?? 0}</Text>
           <Text style={styles.statLabel}>Sesiones</Text>
         </View>
 
         <View style={styles.statCard}>
           <Ionicons name="time-outline" size={24} color="#4da6ff" />
-          <Text style={styles.statNumber}>12h</Text>
+          <Text style={styles.statNumber}>{userData?.totalTime ?? 0} min</Text>
           <Text style={styles.statLabel}>Tiempo</Text>
         </View>
 
         <View style={styles.statCard}>
           <Ionicons name="trophy-outline" size={24} color="#4da6ff" />
-          <Text style={styles.statNumber}>5</Text>
+          <Text style={styles.statNumber}>{userData?.level ?? 1}</Text>
           <Text style={styles.statLabel}>Nivel</Text>
         </View>
       </View>
@@ -49,7 +116,7 @@ export default function ProfileScreen() {
           <Text style={styles.optionText}>Configuración</Text>
         </Pressable>
 
-        <Pressable style={styles.option}>
+        <Pressable style={styles.option} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color="#ff4d4d" />
           <Text style={[styles.optionText, { color: "#ff4d4d" }]}>
             Cerrar sesión
@@ -79,15 +146,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
+  defaultAvatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 12,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#ffffff",
+  },
+
   name: {
     color: "white",
     fontSize: 24,
     fontWeight: "bold",
-  },
-
-  level: {
-    color: "#aaa",
-    marginTop: 4,
   },
 
   statsRow: {
