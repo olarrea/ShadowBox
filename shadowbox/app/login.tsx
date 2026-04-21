@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,13 +11,41 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import { auth } from "../firebaseConfig";
+
+// GOOGLE
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
+
+  // 🔥 CONFIG GOOGLE
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: "727871873170-cvjfqodka6k0h5e6iepndqeit9fp7b78.apps.googleusercontent.com",
+  });
+
+  // 🔥 RESPUESTA GOOGLE
+  useEffect(() => {
+    if (response?.type === "success") {
+      const id_token = (response.authentication as any).idToken;
+
+      const credential = GoogleAuthProvider.credential(id_token);
+
+      signInWithCredential(auth, credential)
+        .then(() => {
+          router.replace("/(tabs)");
+        })
+        .catch(() => {
+          setError("Error al iniciar con Google");
+        });
+    }
+  }, [response]);
 
   async function onLogin() {
     setError("");
@@ -101,6 +129,11 @@ export default function LoginScreen() {
             <Text style={styles.btnText}>Iniciar sesión</Text>
           </Pressable>
 
+          {/* 🔥 BOTÓN GOOGLE */}
+          <Pressable style={styles.googleBtn} onPress={() => promptAsync()}>
+            <Text style={styles.googleText}>Continuar con Google</Text>
+          </Pressable>
+
           <Link href={{ pathname: "/register" } as any} asChild>
             <Pressable>
               <Text style={styles.link}>
@@ -132,13 +165,11 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 44,
     fontWeight: "800",
-    letterSpacing: 0.5,
   },
   logoBox: {
     color: "#2E8BFF",
     fontSize: 44,
     fontWeight: "800",
-    letterSpacing: 0.5,
   },
 
   form: {
@@ -154,13 +185,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
-
-    shadowColor: "#FF7A00",
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    elevation: 8,
   },
+
   leftIcon: { marginRight: 10 },
+
   input: {
     flex: 1,
     color: "#FFFFFF",
@@ -173,17 +201,28 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF7A00",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 6,
-
-    shadowColor: "#FF7A00",
-    shadowOpacity: 0.45,
-    shadowRadius: 16,
-    elevation: 10,
   },
+
   btnText: {
     color: "#FFFFFF",
     fontSize: 20,
     fontWeight: "800",
+  },
+
+  // 🔥 GOOGLE BUTTON
+  googleBtn: {
+    marginTop: 10,
+    height: 54,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  googleText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
 
   link: {
@@ -192,6 +231,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 14,
   },
+
   linkStrong: {
     fontWeight: "800",
     color: "#2E8BFF",
@@ -200,7 +240,5 @@ const styles = StyleSheet.create({
   error: {
     color: "#FF6B6B",
     textAlign: "center",
-    marginTop: 2,
-    fontWeight: "600",
   },
 });
