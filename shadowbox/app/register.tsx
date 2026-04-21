@@ -12,7 +12,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebaseConfig";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../firebaseConfig";
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState("");
@@ -25,32 +26,45 @@ export default function RegisterScreen() {
   const [error, setError] = useState("");
 
   async function onRegister() {
-    setError("");
+  setError("");
 
-    if (!email || !pass || !confirm) {
-      setError("Completa todos los campos.");
-      return;
-    }
-    if (!email.includes("@")) {
-      setError("Correo no válido.");
-      return;
-    }
-    if (pass.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres.");
-      return;
-    }
-    if (pass !== confirm) {
-      setError("Las contraseñas no coinciden.");
-      return;
-    }
-
-    try {
-      await createUserWithEmailAndPassword(auth, email, pass);
-      router.replace("/login");
-    } catch (err: any) {
-      setError(err.message);
-    }
+  if (!email || !pass || !confirm) {
+    setError("Completa todos los campos.");
+    return;
   }
+  if (!email.includes("@")) {
+    setError("Correo no válido.");
+    return;
+  }
+  if (pass.length < 6) {
+    setError("La contraseña debe tener al menos 6 caracteres.");
+    return;
+  }
+  if (pass !== confirm) {
+    setError("Las contraseñas no coinciden.");
+    return;
+  }
+
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    const user = userCredential.user;
+
+    await setDoc(doc(db, "users", user.uid), {
+      name: email.split("@")[0],
+      email: email,
+      photo: "",
+      sessions: 0,
+      totalTime: 0,
+      level: 1,
+      createdAt: new Date().toISOString(),
+    });
+
+    router.replace("/(tabs)");
+  } catch (err: any) {
+    console.log("ERROR REGISTER:", JSON.stringify(err, null, 2));
+    setError(err?.message || "Error al crear la cuenta.");
+  }
+}
 
   return (
     <ImageBackground

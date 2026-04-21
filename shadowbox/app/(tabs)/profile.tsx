@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { auth, db } from "../../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 
 type UserData = {
   email?: string;
@@ -25,35 +26,37 @@ type UserData = {
 export default function ProfileScreen() {
   const [userData, setUserData] = useState<UserData | null>(null);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const user = auth.currentUser;
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUserData = async () => {
+        try {
+          const user = auth.currentUser;
 
-        if (!user) return;
+          if (!user) return;
 
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
+          const userRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userRef);
 
-        if (userSnap.exists()) {
-          setUserData(userSnap.data() as UserData);
-        } else {
-          setUserData({
-            email: user.email || "Usuario",
-            name: user.email || "Usuario",
-            photo: null,
-            sessions: 0,
-            totalTime: 0,
-            level: 1,
-          });
+          if (userSnap.exists()) {
+            setUserData(userSnap.data() as UserData);
+          } else {
+            setUserData({
+              email: user.email || "Usuario",
+              name: user.email || "Usuario",
+              photo: null,
+              sessions: 0,
+              totalTime: 0,
+              level: 1,
+            });
+          }
+        } catch (error) {
+          console.log("Error al cargar perfil:", error);
         }
-      } catch (error) {
-        console.log("Error al cargar perfil:", error);
-      }
-    };
+      };
 
-    fetchUserData();
-  }, []);
+      fetchUserData();
+    }, [])
+  );
 
   const handleLogout = async () => {
     try {
@@ -106,7 +109,10 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.options}>
-        <Pressable style={styles.option}>
+        <Pressable
+          style={styles.option}
+          onPress={() => router.push({ pathname: "/edit-profile" } as any)}
+        >
           <Ionicons name="person-outline" size={20} color="white" />
           <Text style={styles.optionText}>Editar perfil</Text>
         </Pressable>

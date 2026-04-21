@@ -14,7 +14,6 @@ import { Link, router } from "expo-router";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import { auth } from "../firebaseConfig";
 
-// GOOGLE
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 
@@ -25,12 +24,10 @@ export default function LoginScreen() {
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
 
-  // 🔥 CONFIG GOOGLE
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: "727871873170-cvjfqodka6k0h5e6iepndqeit9fp7b78.apps.googleusercontent.com",
   });
 
-  // 🔥 RESPUESTA GOOGLE
   useEffect(() => {
     if (response?.type === "success") {
       const id_token = (response.authentication as any).idToken;
@@ -129,7 +126,6 @@ export default function LoginScreen() {
             <Text style={styles.btnText}>Iniciar sesión</Text>
           </Pressable>
 
-          {/* 🔥 BOTÓN GOOGLE */}
           <Pressable style={styles.googleBtn} onPress={() => promptAsync()}>
             <Text style={styles.googleText}>Continuar con Google</Text>
           </Pressable>

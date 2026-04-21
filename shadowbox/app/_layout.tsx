@@ -9,6 +9,7 @@ export default function RootLayout() {
       <Stack.Screen name="generate" />
       <Stack.Screen name="plan" />
       <Stack.Screen name="progress" />
+      <Stack.Screen name="edit-profile" />
     </Stack>
   );
 }
