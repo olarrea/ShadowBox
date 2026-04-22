@@ -34,6 +34,11 @@ function formatSeconds(seconds: number) {
   return `${mins} min`;
 }
 
+function formatLevel(level: string) {
+  if (!level) return "Básico";
+  return level.charAt(0).toUpperCase() + level.slice(1);
+}
+
 export default function WorkoutDetailScreen() {
   const { workoutId } = useLocalSearchParams();
   const [workout, setWorkout] = useState<Workout | null>(null);
@@ -89,7 +94,7 @@ export default function WorkoutDetailScreen() {
             <Ionicons name="arrow-back" size={26} color="white" />
           </Pressable>
 
-          <Text style={styles.topTitle}>Detalle</Text>
+          <Text style={styles.topTitle}>Entrenamiento</Text>
 
           <Pressable>
             <Ionicons name="heart-outline" size={24} color="#FF7A00" />
@@ -97,8 +102,27 @@ export default function WorkoutDetailScreen() {
         </View>
 
         <View style={styles.heroCard}>
+          <Text style={styles.heroSmall}>Plan actual</Text>
           <Text style={styles.heroTitle}>{workout.title}</Text>
           <Text style={styles.heroDescription}>{workout.description}</Text>
+
+          <View style={styles.badgesRow}>
+            <View style={styles.badgeOrange}>
+              <Text style={styles.badgeText}>{formatLevel(workout.level)}</Text>
+            </View>
+
+            <View style={styles.badgeBlue}>
+              <Text style={styles.badgeText}>
+                {workout.estimatedMinutes} min
+              </Text>
+            </View>
+
+            <View style={styles.badgeGray}>
+              <Text style={styles.badgeText}>
+                {workout.rounds?.length || 0} rondas
+              </Text>
+            </View>
+          </View>
         </View>
 
         <Text style={styles.sectionTitle}>Resumen</Text>
@@ -118,9 +142,7 @@ export default function WorkoutDetailScreen() {
 
           <View style={styles.summaryCard}>
             <Ionicons name="fitness-outline" size={24} color="#2E8BFF" />
-            <Text style={styles.summaryNumber}>
-              {workout.level.charAt(0).toUpperCase() + workout.level.slice(1)}
-            </Text>
+            <Text style={styles.summaryNumber}>{formatLevel(workout.level)}</Text>
             <Text style={styles.summaryLabel}>Nivel</Text>
           </View>
         </View>
@@ -134,10 +156,11 @@ export default function WorkoutDetailScreen() {
                 <View style={styles.roundNumber}>
                   <Text style={styles.roundNumberText}>{index + 1}</Text>
                 </View>
+
                 <View style={{ flex: 1 }}>
                   <Text style={styles.roundTitle}>{round.title}</Text>
                   <Text style={styles.roundDuration}>
-                    {formatSeconds(round.duration)}
+                    ⏱ {formatSeconds(round.duration)}
                   </Text>
                 </View>
               </View>
@@ -145,19 +168,21 @@ export default function WorkoutDetailScreen() {
               <Text style={styles.roundDescription}>{round.description}</Text>
 
               <View style={styles.roundImagePlaceholder}>
-                <Ionicons name="image-outline" size={28} color="#aaa" />
+                <Ionicons name="fitness-outline" size={28} color="#FF7A00" />
                 <Text style={styles.roundImageText}>
-                  Aquí irá la imagen de muestra
+                  Referencia visual: {round.image || "sin imagen"}
                 </Text>
               </View>
             </View>
           ))
         ) : (
           <View style={styles.noRoundsCard}>
-            <Text style={styles.noRoundsTitle}>Este entrenamiento aún no tiene rondas cargadas</Text>
+            <Text style={styles.noRoundsTitle}>
+              Este entrenamiento aún no tiene rondas cargadas
+            </Text>
             <Text style={styles.noRoundsText}>
-              En el siguiente paso vamos a añadirlas en Firebase para que cada una tenga
-              título, explicación, duración y foto.
+              Añade las rondas en Firestore para mostrar cada bloque con su
+              duración, explicación e imagen.
             </Text>
           </View>
         )}
@@ -218,6 +243,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "rgba(255,122,0,0.45)",
     marginBottom: 22,
+    shadowColor: "#FF7A00",
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+
+  heroSmall: {
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 14,
+    marginBottom: 6,
   },
 
   heroTitle: {
@@ -237,6 +272,7 @@ const styles = StyleSheet.create({
 
   badgesRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
 
@@ -249,6 +285,13 @@ const styles = StyleSheet.create({
 
   badgeBlue: {
     backgroundColor: "rgba(46,139,255,0.25)",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+
+  badgeGray: {
+    backgroundColor: "rgba(255,255,255,0.12)",
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -347,18 +390,20 @@ const styles = StyleSheet.create({
   },
 
   roundImagePlaceholder: {
-    height: 110,
+    height: 90,
     borderRadius: 16,
     backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 12,
   },
 
   roundImageText: {
     color: "#aaa",
     marginTop: 8,
+    textAlign: "center",
   },
 
   noRoundsCard: {
