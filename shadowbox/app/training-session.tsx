@@ -6,10 +6,14 @@ import {
   ImageBackground,
   Pressable,
   Platform,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { auth, db } from "../firebaseConfig";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { router } from "expo-router";
 
-const ROUND_SECONDS = 5 * 60; 
+const ROUND_SECONDS = 5 * 60;
 const TOTAL_ROUNDS = 5;
 
 function pad2(n: number) {
@@ -24,9 +28,11 @@ function formatMMSS(totalSeconds: number) {
 
 export default function TrainScreen() {
   const [round, setRound] = useState(1);
-  const [isRest, setIsRest] = useState(true); 
+  const [isRest, setIsRest] = useState(true);
   const [isRunning, setIsRunning] = useState(true);
   const [secondsLeft, setSecondsLeft] = useState(ROUND_SECONDS);
+  const [totalSecondsUsed, setTotalSecondsUsed] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -36,6 +42,8 @@ export default function TrainScreen() {
         if (s <= 1) return 0;
         return s - 1;
       });
+
+      setTotalSecondsUsed((t) => t + 1);
     }, 1000);
 
     return () => clearInterval(id);
@@ -61,15 +69,67 @@ export default function TrainScreen() {
   function nextRound() {
     setSecondsLeft(ROUND_SECONDS);
     setIsRunning(true);
-    setIsRest((r) => !r); 
+    setIsRest((r) => !r);
     setRound((r) => (r >= TOTAL_ROUNDS ? 1 : r + 1));
   }
 
-  function finish() {
-    setIsRunning(false);
-    setSecondsLeft(ROUND_SECONDS);
-    setRound(1);
-    setIsRest(true);
+  async function finish() {
+    try {
+      setSaving(true);
+      setIsRunning(false);
+
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert("Error", "No hay usuario autenticado.");
+        return;
+      }
+
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        Alert.alert("Error", "No se encontraron los datos del usuario.");
+        return;
+      }
+
+      const currentData = userSnap.data();
+      const currentSessions = currentData.sessions ?? 0;
+      const currentTotalTime = currentData.totalTime ?? 0;
+
+      const sessionMinutes = Math.max(1, Math.ceil(totalSecondsUsed / 60));
+
+      const newSessions = currentSessions + 1;
+      const newTotalTime = currentTotalTime + sessionMinutes;
+      const newLevel = Math.floor(newSessions / 5) + 1;
+
+      await updateDoc(userRef, {
+        sessions: newSessions,
+        totalTime: newTotalTime,
+        level: newLevel,
+      });
+
+      Alert.alert(
+        "Entrenamiento guardado",
+        `Has completado 1 sesión y sumado ${sessionMinutes} min.`,
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              setSecondsLeft(ROUND_SECONDS);
+              setRound(1);
+              setIsRest(true);
+              setTotalSecondsUsed(0);
+              router.back();
+            },
+          },
+        ]
+      );
+    } catch (err) {
+      console.log("ERROR GUARDANDO ENTRENAMIENTO:", err);
+      Alert.alert("Error", "No se pudo guardar el progreso del entrenamiento.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -110,7 +170,11 @@ export default function TrainScreen() {
           </Text>
 
           <View style={styles.restRow}>
-            <Ionicons name="walk-outline" size={18} color="rgba(255,255,255,0.85)" />
+            <Ionicons
+              name="walk-outline"
+              size={18}
+              color="rgba(255,255,255,0.85)"
+            />
             <Text style={styles.restText}>{isRest ? "Descanso" : "Trabajo"}</Text>
           </View>
         </View>
@@ -121,8 +185,16 @@ export default function TrainScreen() {
         </Text>
 
         <View style={styles.actionsRow}>
-          <Pressable style={[styles.bigBtn, styles.blueBtn]} onPress={togglePause}>
-            <Ionicons name={isRunning ? "pause" : "play"} size={22} color="#FFFFFF" />
+          <Pressable
+            style={[styles.bigBtn, styles.blueBtn]}
+            onPress={togglePause}
+            disabled={saving}
+          >
+            <Ionicons
+              name={isRunning ? "pause" : "play"}
+              size={22}
+              color="#FFFFFF"
+            />
             <Text style={styles.blueBtnText}>
               {isRunning ? "Pausar" : "Continuar"}
               {"\n"}
@@ -133,38 +205,61 @@ export default function TrainScreen() {
             </Text>
           </Pressable>
 
-          <Pressable style={[styles.midBtn, styles.orangeBtn]} onPress={finish}>
+          <Pressable
+            style={[styles.midBtn, styles.orangeBtn, saving && styles.disabledBtn]}
+            onPress={finish}
+            disabled={saving}
+          >
             <View style={styles.stopSquare} />
-            <Text style={styles.orangeBtnText}>Finalizar</Text>
+            <Text style={styles.orangeBtnText}>
+              {saving ? "Guardando..." : "Finalizar"}
+            </Text>
           </Pressable>
 
-          <Pressable style={[styles.bigBtn, styles.whiteBtn]} onPress={nextRound}>
+          <Pressable
+            style={[styles.bigBtn, styles.whiteBtn]}
+            onPress={nextRound}
+            disabled={saving}
+          >
             <Ionicons name="repeat" size={22} color="#2E8BFF" />
-            <Text style={styles.whiteBtnText}>Cambiar{"\n"}ronda</Text>
+            <Text style={styles.whiteBtnText}>
+              Cambiar{"\n"}ronda
+            </Text>
           </Pressable>
         </View>
 
         <View style={styles.fakeBottomRow}>
-          <Ionicons name="home" size={22} color="#FFFFFF" style={{ opacity: 0.95 }} />
-          <Ionicons name="person" size={22} color="#FFFFFF" style={{ opacity: 0.6 }} />
-          <Ionicons name="refresh" size={22} color="#FFFFFF" style={{ opacity: 0.6 }} />
+          <Ionicons
+            name="home"
+            size={22}
+            color="#FFFFFF"
+            style={{ opacity: 0.95 }}
+          />
+          <Ionicons
+            name="person"
+            size={22}
+            color="#FFFFFF"
+            style={{ opacity: 0.6 }}
+          />
+          <Ionicons
+            name="refresh"
+            size={22}
+            color="#FFFFFF"
+            style={{ opacity: 0.6 }}
+          />
         </View>
       </View>
     </ImageBackground>
   );
 }
 
-
 function ProgressRing({ progress }: { progress: number }) {
-  
   const orangeOpacity = Math.max(0.25, 1 - progress);
 
   return (
     <View style={styles.ringWrap}>
       <View style={styles.ringBlue} />
-
       <View style={[styles.ringOrange, { opacity: orangeOpacity }]} />
-
       <View style={styles.ringCenter} />
     </View>
   );
@@ -229,9 +324,17 @@ const styles = StyleSheet.create({
   },
 
   infoWrap: { alignItems: "center", gap: 6, marginBottom: 8 },
-  roundText: { color: "rgba(255,255,255,0.85)", fontSize: 18, fontWeight: "700" },
+  roundText: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 18,
+    fontWeight: "700",
+  },
   restRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  restText: { color: "rgba(255,255,255,0.75)", fontSize: 18, fontWeight: "700" },
+  restText: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 18,
+    fontWeight: "700",
+  },
 
   bigTitle: {
     textAlign: "center",
@@ -278,6 +381,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,122,0,0.20)",
   },
   orangeBtn: {},
+  disabledBtn: {
+    opacity: 0.7,
+  },
   stopSquare: {
     width: 22,
     height: 22,

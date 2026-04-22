@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,13 +6,75 @@ import {
   ImageBackground,
   Pressable,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { db } from "../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { router, useLocalSearchParams } from "expo-router";
+
+type WorkoutRound = {
+  title: string;
+  description: string;
+  duration: number;
+  image?: string;
+};
+
+type Workout = {
+  title: string;
+  description: string;
+  level: string;
+  estimatedMinutes: number;
+  createdBy?: string;
+  rounds?: WorkoutRound[];
+};
+
+function formatSeconds(seconds: number) {
+  const mins = Math.floor(seconds / 60);
+  return `${mins} min`;
+}
 
 export default function WorkoutDetailScreen() {
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isDownloaded, setIsDownloaded] = useState(false);
+  const { workoutId } = useLocalSearchParams();
+  const [workout, setWorkout] = useState<Workout | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (workoutId) {
+      loadWorkout();
+    }
+  }, [workoutId]);
+
+  async function loadWorkout() {
+    try {
+      const ref = doc(db, "workouts", String(workoutId));
+      const snap = await getDoc(ref);
+
+      if (snap.exists()) {
+        setWorkout(snap.data() as Workout);
+      }
+    } catch (error) {
+      console.log("ERROR CARGANDO WORKOUT DETAIL:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#FF7A00" />
+      </View>
+    );
+  }
+
+  if (!workout) {
+    return (
+      <View style={styles.center}>
+        <Text style={{ color: "white" }}>No se encontró el entrenamiento</Text>
+      </View>
+    );
+  }
 
   return (
     <ImageBackground
@@ -27,112 +89,91 @@ export default function WorkoutDetailScreen() {
             <Ionicons name="arrow-back" size={26} color="white" />
           </Pressable>
 
-          <Text style={styles.title}>Detalle</Text>
+          <Text style={styles.topTitle}>Detalle</Text>
 
-          <Pressable onPress={() => setIsFavorite(!isFavorite)}>
-            <Ionicons
-              name={isFavorite ? "heart" : "heart-outline"}
-              size={24}
-              color={isFavorite ? "#FF7A00" : "white"}
-            />
+          <Pressable>
+            <Ionicons name="heart-outline" size={24} color="#FF7A00" />
           </Pressable>
         </View>
 
-        <View style={styles.mainCard}>
-          <Text style={styles.mainTitle}>Plan semanal de boxeo</Text>
-          <Text style={styles.mainSubtitle}>
-            Técnica, resistencia y ritmo de combate
-          </Text>
-
-          <View style={styles.badgesRow}>
-            <View style={styles.badgeBlue}>
-              <Text style={styles.badgeText}>Nivel 1</Text>
-            </View>
-            <View style={styles.badgeOrange}>
-              <Text style={styles.badgeText}>45 min</Text>
-            </View>
-          </View>
+        <View style={styles.heroCard}>
+          <Text style={styles.heroTitle}>{workout.title}</Text>
+          <Text style={styles.heroDescription}>{workout.description}</Text>
         </View>
 
         <Text style={styles.sectionTitle}>Resumen</Text>
 
         <View style={styles.summaryRow}>
           <View style={styles.summaryCard}>
-            <Ionicons name="repeat-outline" size={22} color="#2E8BFF" />
-            <Text style={styles.summaryNumber}>5</Text>
+            <Ionicons name="time-outline" size={24} color="#2E8BFF" />
+            <Text style={styles.summaryNumber}>{workout.estimatedMinutes}</Text>
+            <Text style={styles.summaryLabel}>Minutos</Text>
+          </View>
+
+          <View style={styles.summaryCard}>
+            <Ionicons name="layers-outline" size={24} color="#FF7A00" />
+            <Text style={styles.summaryNumber}>{workout.rounds?.length || 0}</Text>
             <Text style={styles.summaryLabel}>Rondas</Text>
           </View>
 
           <View style={styles.summaryCard}>
-            <Ionicons name="time-outline" size={22} color="#FF7A00" />
-            <Text style={styles.summaryNumber}>60s</Text>
-            <Text style={styles.summaryLabel}>Descanso</Text>
-          </View>
-
-          <View style={styles.summaryCard}>
-            <Ionicons name="flash-outline" size={22} color="#2E8BFF" />
-            <Text style={styles.summaryNumber}>Media</Text>
-            <Text style={styles.summaryLabel}>Intensidad</Text>
-          </View>
-        </View>
-
-        <Text style={styles.sectionTitle}>Bloques del entrenamiento</Text>
-
-        <View style={styles.blockCard}>
-          <Ionicons name="body-outline" size={20} color="#2E8BFF" />
-          <View style={styles.blockTextWrap}>
-            <Text style={styles.blockTitle}>Calentamiento</Text>
-            <Text style={styles.blockText}>5 min · movilidad y activación</Text>
-          </View>
-        </View>
-
-        <View style={styles.blockCard}>
-          <Ionicons name="hand-left-outline" size={20} color="#FF7A00" />
-          <View style={styles.blockTextWrap}>
-            <Text style={styles.blockTitle}>Shadowboxing</Text>
-            <Text style={styles.blockText}>3 rondas · técnica y desplazamientos</Text>
-          </View>
-        </View>
-
-        <View style={styles.blockCard}>
-          <Ionicons name="flash-outline" size={20} color="#2E8BFF" />
-          <View style={styles.blockTextWrap}>
-            <Text style={styles.blockTitle}>Combinaciones</Text>
-            <Text style={styles.blockText}>2 rondas · jab, cross, hook</Text>
-          </View>
-        </View>
-
-        <View style={styles.blockCard}>
-          <Ionicons name="walk-outline" size={20} color="#FF7A00" />
-          <View style={styles.blockTextWrap}>
-            <Text style={styles.blockTitle}>Vuelta a la calma</Text>
-            <Text style={styles.blockText}>5 min · respiración y recuperación</Text>
-          </View>
-        </View>
-
-        <View style={styles.actions}>
-          <Pressable
-            style={styles.startBtn}
-            onPress={() => router.push({ pathname: "/training-session" } as any)}
-          >
-            <Ionicons name="play" size={18} color="white" />
-            <Text style={styles.startBtnText}>Iniciar entrenamiento</Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.downloadBtn}
-            onPress={() => setIsDownloaded(!isDownloaded)}
-          >
-            <Ionicons
-              name={isDownloaded ? "checkmark-circle" : "download-outline"}
-              size={18}
-              color="white"
-            />
-            <Text style={styles.downloadBtnText}>
-              {isDownloaded ? "Descargado" : "Descargar offline"}
+            <Ionicons name="fitness-outline" size={24} color="#2E8BFF" />
+            <Text style={styles.summaryNumber}>
+              {workout.level.charAt(0).toUpperCase() + workout.level.slice(1)}
             </Text>
-          </Pressable>
+            <Text style={styles.summaryLabel}>Nivel</Text>
+          </View>
         </View>
+
+        <Text style={styles.sectionTitle}>Rondas del entrenamiento</Text>
+
+        {workout.rounds && workout.rounds.length > 0 ? (
+          workout.rounds.map((round, index) => (
+            <View key={index} style={styles.roundCard}>
+              <View style={styles.roundHeader}>
+                <View style={styles.roundNumber}>
+                  <Text style={styles.roundNumberText}>{index + 1}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.roundTitle}>{round.title}</Text>
+                  <Text style={styles.roundDuration}>
+                    {formatSeconds(round.duration)}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.roundDescription}>{round.description}</Text>
+
+              <View style={styles.roundImagePlaceholder}>
+                <Ionicons name="image-outline" size={28} color="#aaa" />
+                <Text style={styles.roundImageText}>
+                  Aquí irá la imagen de muestra
+                </Text>
+              </View>
+            </View>
+          ))
+        ) : (
+          <View style={styles.noRoundsCard}>
+            <Text style={styles.noRoundsTitle}>Este entrenamiento aún no tiene rondas cargadas</Text>
+            <Text style={styles.noRoundsText}>
+              En el siguiente paso vamos a añadirlas en Firebase para que cada una tenga
+              título, explicación, duración y foto.
+            </Text>
+          </View>
+        )}
+
+        <Pressable
+          style={styles.startBtn}
+          onPress={() =>
+            router.push({
+              pathname: "/training-session",
+              params: { workoutId: String(workoutId) },
+            } as any)
+          }
+        >
+          <Ionicons name="play" size={18} color="white" />
+          <Text style={styles.startBtnText}>Iniciar entrenamiento</Text>
+        </Pressable>
       </ScrollView>
     </ImageBackground>
   );
@@ -147,7 +188,14 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     paddingTop: 54,
-    paddingBottom: 30,
+    paddingBottom: 32,
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#070A0F",
   },
 
   topBar: {
@@ -157,32 +205,34 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
 
-  title: {
-    color: "#fff",
+  topTitle: {
+    color: "white",
     fontSize: 24,
     fontWeight: "800",
   },
 
-  mainCard: {
-    backgroundColor: "rgba(0,0,0,0.62)",
-    borderRadius: 22,
+  heroCard: {
+    backgroundColor: "rgba(0,0,0,0.72)",
+    borderRadius: 24,
+    padding: 22,
     borderWidth: 2,
-    borderColor: "rgba(46,139,255,0.45)",
-    padding: 20,
+    borderColor: "rgba(255,122,0,0.45)",
     marginBottom: 22,
   },
 
-  mainTitle: {
-    color: "#fff",
-    fontSize: 24,
+  heroTitle: {
+    color: "white",
+    fontSize: 28,
     fontWeight: "900",
-    marginBottom: 6,
+    marginBottom: 10,
+    lineHeight: 34,
   },
 
-  mainSubtitle: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 14,
-    marginBottom: 14,
+  heroDescription: {
+    color: "rgba(255,255,255,0.78)",
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 16,
   },
 
   badgesRow: {
@@ -190,24 +240,23 @@ const styles = StyleSheet.create({
     gap: 10,
   },
 
-  badgeBlue: {
-    backgroundColor: "rgba(46,139,255,0.25)",
-    borderRadius: 12,
-    paddingHorizontal: 12,
+  badgeOrange: {
+    backgroundColor: "rgba(255,122,0,0.25)",
+    borderRadius: 14,
+    paddingHorizontal: 14,
     paddingVertical: 8,
   },
 
-  badgeOrange: {
-    backgroundColor: "rgba(255,122,0,0.25)",
-    borderRadius: 12,
-    paddingHorizontal: 12,
+  badgeBlue: {
+    backgroundColor: "rgba(46,139,255,0.25)",
+    borderRadius: 14,
+    paddingHorizontal: 14,
     paddingVertical: 8,
   },
 
   badgeText: {
     color: "#fff",
-    fontWeight: "700",
-    fontSize: 13,
+    fontWeight: "800",
   },
 
   sectionTitle: {
@@ -215,7 +264,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "800",
     marginBottom: 14,
-    marginTop: 2,
+    marginTop: 4,
   },
 
   summaryRow: {
@@ -227,7 +276,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     width: "31%",
     backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 14,
     alignItems: "center",
     borderWidth: 1.5,
@@ -238,51 +287,104 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "900",
     fontSize: 16,
-    marginTop: 6,
+    marginTop: 8,
+    textAlign: "center",
   },
 
   summaryLabel: {
     color: "rgba(255,255,255,0.72)",
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 5,
     textAlign: "center",
   },
 
-  blockCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 16,
-    padding: 15,
-    marginBottom: 12,
+  roundCard: {
+    backgroundColor: "rgba(0,0,0,0.62)",
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 14,
     borderWidth: 1.5,
     borderColor: "rgba(255,255,255,0.08)",
   },
 
-  blockTextWrap: {
-    marginLeft: 12,
-    flex: 1,
+  roundHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
   },
 
-  blockTitle: {
-    color: "#fff",
+  roundNumber: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FF7A00",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+
+  roundNumberText: {
+    color: "white",
+    fontWeight: "900",
+  },
+
+  roundTitle: {
+    color: "white",
+    fontSize: 17,
     fontWeight: "800",
-    fontSize: 15,
-    marginBottom: 4,
   },
 
-  blockText: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 13,
+  roundDuration: {
+    color: "#2E8BFF",
+    marginTop: 4,
+    fontWeight: "700",
   },
 
-  actions: {
-    marginTop: 18,
-    gap: 12,
+  roundDescription: {
+    color: "rgba(255,255,255,0.76)",
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+
+  roundImagePlaceholder: {
+    height: 110,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  roundImageText: {
+    color: "#aaa",
+    marginTop: 8,
+  },
+
+  noRoundsCard: {
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 18,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+
+  noRoundsTitle: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 8,
+  },
+
+  noRoundsText: {
+    color: "rgba(255,255,255,0.72)",
+    lineHeight: 20,
   },
 
   startBtn: {
-    height: 56,
+    marginTop: 8,
+    height: 58,
     borderRadius: 18,
     backgroundColor: "#FF7A00",
     flexDirection: "row",
@@ -292,24 +394,8 @@ const styles = StyleSheet.create({
   },
 
   startBtnText: {
-    color: "#fff",
+    color: "white",
     fontSize: 17,
     fontWeight: "800",
-  },
-
-  downloadBtn: {
-    height: 54,
-    borderRadius: 18,
-    backgroundColor: "#2E8BFF",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-  },
-
-  downloadBtnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
   },
 });
