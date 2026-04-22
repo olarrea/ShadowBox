@@ -11,6 +11,7 @@ export default function RootLayout() {
       <Stack.Screen name="progress" />
       <Stack.Screen name="edit-profile" />
       <Stack.Screen name="training-session" />
+      <Stack.Screen name="workout-detail" />
     </Stack>
   );
 }
