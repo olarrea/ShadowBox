@@ -137,7 +137,10 @@ export default function TrainHubScreen() {
             <Text style={styles.cardText}>Entrena sin conexión</Text>
           </Pressable>
 
-          <Pressable style={[styles.card, styles.orangeCard]}>
+          <Pressable
+            style={[styles.card, styles.orangeCard]}
+            onPress={() => router.push({ pathname: "/favorites" } as any)}
+          >
             <Ionicons name="heart-outline" size={30} color="#FF7A00" />
             <Text style={styles.cardTitle}>Favoritos</Text>
             <Text style={styles.cardText}>Tus rutinas guardadas</Text>

@@ -7,10 +7,11 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { db } from "../firebaseConfig";
-import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../firebaseConfig";
+import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { router, useLocalSearchParams } from "expo-router";
 
 type WorkoutRound = {
@@ -43,10 +44,13 @@ export default function WorkoutDetailScreen() {
   const { workoutId } = useLocalSearchParams();
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [loading, setLoading] = useState(true);
+  const [favorite, setFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   useEffect(() => {
     if (workoutId) {
       loadWorkout();
+      checkFavorite();
     }
   }, [workoutId]);
 
@@ -62,6 +66,57 @@ export default function WorkoutDetailScreen() {
       console.log("ERROR CARGANDO WORKOUT DETAIL:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function checkFavorite() {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const favRef = doc(db, "users", user.uid, "favorites", String(workoutId));
+      const favSnap = await getDoc(favRef);
+
+      setFavorite(favSnap.exists());
+    } catch (error) {
+      console.log("ERROR REVISANDO FAVORITO:", error);
+    }
+  }
+
+  async function toggleFavorite() {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert("Error", "Debes iniciar sesión.");
+        return;
+      }
+
+      if (!workout) return;
+
+      setFavoriteLoading(true);
+
+      const favRef = doc(db, "users", user.uid, "favorites", String(workoutId));
+
+      if (favorite) {
+        await deleteDoc(favRef);
+        setFavorite(false);
+      } else {
+        await setDoc(favRef, {
+          title: workout.title,
+          description: workout.description,
+          level: workout.level,
+          estimatedMinutes: workout.estimatedMinutes,
+          createdBy: workout.createdBy || "system",
+          rounds: workout.rounds || [],
+          addedAt: new Date().toISOString(),
+        });
+        setFavorite(true);
+      }
+    } catch (error) {
+      console.log("ERROR TOGGLE FAVORITE:", error);
+      Alert.alert("Error", "No se pudo actualizar favoritos.");
+    } finally {
+      setFavoriteLoading(false);
     }
   }
 
@@ -96,8 +151,12 @@ export default function WorkoutDetailScreen() {
 
           <Text style={styles.topTitle}>Entrenamiento</Text>
 
-          <Pressable>
-            <Ionicons name="heart-outline" size={24} color="#FF7A00" />
+          <Pressable onPress={toggleFavorite} disabled={favoriteLoading}>
+            <Ionicons
+              name={favorite ? "heart" : "heart-outline"}
+              size={24}
+              color="#FF7A00"
+            />
           </Pressable>
         </View>
 
@@ -112,9 +171,7 @@ export default function WorkoutDetailScreen() {
             </View>
 
             <View style={styles.badgeBlue}>
-              <Text style={styles.badgeText}>
-                {workout.estimatedMinutes} min
-              </Text>
+              <Text style={styles.badgeText}>{workout.estimatedMinutes} min</Text>
             </View>
 
             <View style={styles.badgeGray}>
@@ -198,6 +255,26 @@ export default function WorkoutDetailScreen() {
         >
           <Ionicons name="play" size={18} color="white" />
           <Text style={styles.startBtnText}>Iniciar entrenamiento</Text>
+        </Pressable>
+
+        <Pressable
+          style={[styles.secondaryBtn, favorite && styles.secondaryBtnActive]}
+          onPress={toggleFavorite}
+          disabled={favoriteLoading}
+        >
+          <Ionicons
+            name={favorite ? "heart" : "heart-outline"}
+            size={18}
+            color="white"
+          />
+          <Text style={styles.secondaryBtnText}>
+            {favorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+          </Text>
+        </Pressable>
+
+        <Pressable style={styles.secondaryBlueBtn}>
+          <Ionicons name="download-outline" size={18} color="white" />
+          <Text style={styles.secondaryBtnText}>Descargar entrenamiento</Text>
         </Pressable>
       </ScrollView>
     </ImageBackground>
@@ -442,5 +519,41 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 17,
     fontWeight: "800",
+  },
+
+  secondaryBtn: {
+    marginTop: 12,
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,122,0,0.25)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,122,0,0.5)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+
+  secondaryBtnActive: {
+    backgroundColor: "rgba(255,122,0,0.4)",
+  },
+
+  secondaryBlueBtn: {
+    marginTop: 12,
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: "rgba(46,139,255,0.25)",
+    borderWidth: 1.5,
+    borderColor: "rgba(46,139,255,0.5)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+
+  secondaryBtnText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });
