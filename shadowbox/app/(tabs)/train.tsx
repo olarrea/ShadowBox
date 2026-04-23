@@ -131,7 +131,10 @@ export default function TrainHubScreen() {
         <Text style={styles.sectionTitle}>Accesos rápidos</Text>
 
         <View style={styles.grid}>
-          <Pressable style={[styles.card, styles.blueCard]}>
+          <Pressable
+            style={[styles.card, styles.blueCard]}
+            onPress={() => router.push({ pathname: "/offline-workouts" } as any)}
+          >
             <Ionicons name="download-outline" size={30} color="#2E8BFF" />
             <Text style={styles.cardTitle}>Descargados</Text>
             <Text style={styles.cardText}>Entrena sin conexión</Text>

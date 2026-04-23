@@ -45,12 +45,15 @@ export default function WorkoutDetailScreen() {
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [loading, setLoading] = useState(true);
   const [favorite, setFavorite] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
   useEffect(() => {
     if (workoutId) {
       loadWorkout();
       checkFavorite();
+      checkDownloaded();
     }
   }, [workoutId]);
 
@@ -80,6 +83,20 @@ export default function WorkoutDetailScreen() {
       setFavorite(favSnap.exists());
     } catch (error) {
       console.log("ERROR REVISANDO FAVORITO:", error);
+    }
+  }
+
+  async function checkDownloaded() {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const downloadRef = doc(db, "users", user.uid, "downloads", String(workoutId));
+      const downloadSnap = await getDoc(downloadRef);
+
+      setDownloaded(downloadSnap.exists());
+    } catch (error) {
+      console.log("ERROR REVISANDO DESCARGA:", error);
     }
   }
 
@@ -117,6 +134,43 @@ export default function WorkoutDetailScreen() {
       Alert.alert("Error", "No se pudo actualizar favoritos.");
     } finally {
       setFavoriteLoading(false);
+    }
+  }
+
+  async function toggleDownload() {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert("Error", "Debes iniciar sesión.");
+        return;
+      }
+
+      if (!workout) return;
+
+      setDownloadLoading(true);
+
+      const downloadRef = doc(db, "users", user.uid, "downloads", String(workoutId));
+
+      if (downloaded) {
+        await deleteDoc(downloadRef);
+        setDownloaded(false);
+      } else {
+        await setDoc(downloadRef, {
+          title: workout.title,
+          description: workout.description,
+          level: workout.level,
+          estimatedMinutes: workout.estimatedMinutes,
+          createdBy: workout.createdBy || "system",
+          rounds: workout.rounds || [],
+          downloadedAt: new Date().toISOString(),
+        });
+        setDownloaded(true);
+      }
+    } catch (error) {
+      console.log("ERROR TOGGLE DOWNLOAD:", error);
+      Alert.alert("Error", "No se pudo actualizar la descarga.");
+    } finally {
+      setDownloadLoading(false);
     }
   }
 
@@ -272,9 +326,19 @@ export default function WorkoutDetailScreen() {
           </Text>
         </Pressable>
 
-        <Pressable style={styles.secondaryBlueBtn}>
-          <Ionicons name="download-outline" size={18} color="white" />
-          <Text style={styles.secondaryBtnText}>Descargar entrenamiento</Text>
+        <Pressable
+          style={[styles.secondaryBlueBtn, downloaded && styles.secondaryBlueBtnActive]}
+          onPress={toggleDownload}
+          disabled={downloadLoading}
+        >
+          <Ionicons
+            name={downloaded ? "checkmark-circle" : "download-outline"}
+            size={18}
+            color="white"
+          />
+          <Text style={styles.secondaryBtnText}>
+            {downloaded ? "Quitar de descargados" : "Descargar entrenamiento"}
+          </Text>
         </Pressable>
       </ScrollView>
     </ImageBackground>
@@ -549,6 +613,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
+  },
+
+  secondaryBlueBtnActive: {
+    backgroundColor: "rgba(46,139,255,0.42)",
   },
 
   secondaryBtnText: {
