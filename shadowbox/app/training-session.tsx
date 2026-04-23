@@ -7,14 +7,43 @@ import {
   Pressable,
   Platform,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
-const ROUND_SECONDS = 5 * 60;
-const TOTAL_ROUNDS = 5;
+type WorkoutRound = {
+  title: string;
+  description: string;
+  duration: number;
+  image?: string;
+};
+
+type Workout = {
+  title: string;
+  description: string;
+  level: string;
+  estimatedMinutes: number;
+  createdBy?: string;
+  rounds?: WorkoutRound[];
+};
+
+const DEFAULT_ROUNDS: WorkoutRound[] = [
+  {
+    title: "Calentamiento",
+    description: "Movilidad articular y activación general antes de empezar.",
+    duration: 300,
+    image: "warmup",
+  },
+  {
+    title: "Shadowboxing",
+    description: "Practica desplazamientos, guardia y combinaciones simples.",
+    duration: 180,
+    image: "shadowboxing",
+  },
+];
 
 function pad2(n: number) {
   return n.toString().padStart(2, "0");
@@ -27,15 +56,79 @@ function formatMMSS(totalSeconds: number) {
 }
 
 export default function TrainScreen() {
-  const [round, setRound] = useState(1);
-  const [isRest, setIsRest] = useState(true);
+  const { workoutId } = useLocalSearchParams();
+
+  const [workout, setWorkout] = useState<Workout | null>(null);
+  const [rounds, setRounds] = useState<WorkoutRound[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
-  const [secondsLeft, setSecondsLeft] = useState(ROUND_SECONDS);
+  const [secondsLeft, setSecondsLeft] = useState(0);
   const [totalSecondsUsed, setTotalSecondsUsed] = useState(0);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!isRunning) return;
+    if (workoutId) {
+      loadWorkout();
+    } else {
+      setWorkout({
+        title: "Entrenamiento",
+        description: "Entrenamiento por defecto",
+        level: "basico",
+        estimatedMinutes: 8,
+        rounds: DEFAULT_ROUNDS,
+      });
+      setRounds(DEFAULT_ROUNDS);
+      setSecondsLeft(DEFAULT_ROUNDS[0].duration);
+      setLoading(false);
+    }
+  }, [workoutId]);
+
+  async function loadWorkout() {
+    try {
+      const ref = doc(db, "workouts", String(workoutId));
+      const snap = await getDoc(ref);
+
+      if (snap.exists()) {
+        const data = snap.data() as Workout;
+        const loadedRounds =
+          data.rounds && data.rounds.length > 0 ? data.rounds : DEFAULT_ROUNDS;
+
+        setWorkout(data);
+        setRounds(loadedRounds);
+        setSecondsLeft(loadedRounds[0].duration);
+      } else {
+        setWorkout({
+          title: "Entrenamiento",
+          description: "Entrenamiento por defecto",
+          level: "basico",
+          estimatedMinutes: 8,
+          rounds: DEFAULT_ROUNDS,
+        });
+        setRounds(DEFAULT_ROUNDS);
+        setSecondsLeft(DEFAULT_ROUNDS[0].duration);
+      }
+    } catch (error) {
+      console.log("ERROR CARGANDO TRAINING SESSION:", error);
+      setWorkout({
+        title: "Entrenamiento",
+        description: "Entrenamiento por defecto",
+        level: "basico",
+        estimatedMinutes: 8,
+        rounds: DEFAULT_ROUNDS,
+      });
+      setRounds(DEFAULT_ROUNDS);
+      setSecondsLeft(DEFAULT_ROUNDS[0].duration);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const currentRound = rounds[currentRoundIndex];
+
+  useEffect(() => {
+    if (loading || !isRunning || !currentRound) return;
 
     const id = setInterval(() => {
       setSecondsLeft((s) => {
@@ -47,30 +140,44 @@ export default function TrainScreen() {
     }, 1000);
 
     return () => clearInterval(id);
-  }, [isRunning]);
+  }, [loading, isRunning, currentRoundIndex, currentRound]);
 
   useEffect(() => {
-    if (secondsLeft === 0) {
+    if (!loading && secondsLeft === 0) {
       setIsRunning(false);
+      Alert.alert(
+        "Ronda terminada",
+        currentRoundIndex < rounds.length - 1
+          ? "Pulsa 'Cambiar ronda' para continuar."
+          : "Has terminado la última ronda. Pulsa 'Finalizar'."
+      );
     }
-  }, [secondsLeft]);
+  }, [secondsLeft, loading]);
 
   const mmss = useMemo(() => formatMMSS(secondsLeft), [secondsLeft]);
   const [mm, ss] = useMemo(() => mmss.split(":"), [mmss]);
 
   const progress = useMemo(() => {
-    return secondsLeft / ROUND_SECONDS;
-  }, [secondsLeft]);
+    if (!currentRound?.duration) return 0;
+    return secondsLeft / currentRound.duration;
+  }, [secondsLeft, currentRound]);
 
   function togglePause() {
     setIsRunning((v) => !v);
   }
 
   function nextRound() {
-    setSecondsLeft(ROUND_SECONDS);
+    if (!rounds.length) return;
+
+    if (currentRoundIndex >= rounds.length - 1) {
+      Alert.alert("Última ronda", "Ya estás en la última ronda del entrenamiento.");
+      return;
+    }
+
+    const nextIndex = currentRoundIndex + 1;
+    setCurrentRoundIndex(nextIndex);
+    setSecondsLeft(rounds[nextIndex].duration);
     setIsRunning(true);
-    setIsRest((r) => !r);
-    setRound((r) => (r >= TOTAL_ROUNDS ? 1 : r + 1));
   }
 
   async function finish() {
@@ -115,10 +222,6 @@ export default function TrainScreen() {
           {
             text: "OK",
             onPress: () => {
-              setSecondsLeft(ROUND_SECONDS);
-              setRound(1);
-              setIsRest(true);
-              setTotalSecondsUsed(0);
               router.back();
             },
           },
@@ -132,6 +235,15 @@ export default function TrainScreen() {
     }
   }
 
+  if (loading || !currentRound) {
+    return (
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator size="large" color="#FF7A00" />
+        <Text style={styles.loadingText}>Cargando entrenamiento...</Text>
+      </View>
+    );
+  }
+
   return (
     <ImageBackground
       source={require("../assets/images/ring-bg.png")}
@@ -141,7 +253,10 @@ export default function TrainScreen() {
     >
       <View style={styles.container}>
         <View style={styles.topBar}>
-          <Ionicons name="menu" size={22} color="rgba(255,255,255,0.8)" />
+          <Pressable onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={22} color="rgba(255,255,255,0.85)" />
+          </Pressable>
+
           <View style={styles.brandRow}>
             <Ionicons name="hand-left" size={22} color="#FF7A00" />
             <Text style={styles.brand}>
@@ -149,6 +264,7 @@ export default function TrainScreen() {
               <Text style={{ color: "#FF7A00", fontWeight: "900" }}>wBox</Text>
             </Text>
           </View>
+
           <View style={{ width: 22 }} />
         </View>
 
@@ -166,23 +282,31 @@ export default function TrainScreen() {
 
         <View style={styles.infoWrap}>
           <Text style={styles.roundText}>
-            Ronda {round} de {TOTAL_ROUNDS}
+            Ronda {currentRoundIndex + 1} de {rounds.length}
           </Text>
 
           <View style={styles.restRow}>
             <Ionicons
-              name="walk-outline"
+              name="fitness-outline"
               size={18}
               color="rgba(255,255,255,0.85)"
             />
-            <Text style={styles.restText}>{isRest ? "Descanso" : "Trabajo"}</Text>
+            <Text style={styles.restText}>Trabajo</Text>
           </View>
         </View>
 
         <Text style={styles.bigTitle}>
-          <Text style={{ color: "#FFFFFF" }}>Shadow</Text>
-          <Text style={{ color: "#FF7A00" }}>boxing</Text> 🥊
+          <Text style={{ color: "#FFFFFF" }}>{currentRound.title}</Text>
         </Text>
+
+        <Text style={styles.roundDescription}>{currentRound.description}</Text>
+
+        <View style={styles.imageTag}>
+          <Ionicons name="image-outline" size={18} color="#FF7A00" />
+          <Text style={styles.imageTagText}>
+            Referencia visual: {currentRound.image || "sin imagen"}
+          </Text>
+        </View>
 
         <View style={styles.actionsRow}>
           <Pressable
@@ -197,16 +321,11 @@ export default function TrainScreen() {
             />
             <Text style={styles.blueBtnText}>
               {isRunning ? "Pausar" : "Continuar"}
-              {"\n"}
-              <Text style={{ fontWeight: "700" }}>/</Text>{" "}
-              <Text style={{ fontWeight: "700" }}>
-                {isRunning ? "Continuar" : "Pausar"}
-              </Text>
             </Text>
           </Pressable>
 
           <Pressable
-            style={[styles.midBtn, styles.orangeBtn, saving && styles.disabledBtn]}
+            style={[styles.midBtn, saving && styles.disabledBtn]}
             onPress={finish}
             disabled={saving}
           >
@@ -222,27 +341,25 @@ export default function TrainScreen() {
             disabled={saving}
           >
             <Ionicons name="repeat" size={22} color="#2E8BFF" />
-            <Text style={styles.whiteBtnText}>
-              Cambiar{"\n"}ronda
-            </Text>
+            <Text style={styles.whiteBtnText}>Cambiar{"\n"}ronda</Text>
           </Pressable>
         </View>
 
         <View style={styles.fakeBottomRow}>
           <Ionicons
-            name="home"
+            name="time-outline"
             size={22}
             color="#FFFFFF"
             style={{ opacity: 0.95 }}
           />
           <Ionicons
-            name="person"
+            name="layers-outline"
             size={22}
             color="#FFFFFF"
             style={{ opacity: 0.6 }}
           />
           <Ionicons
-            name="refresh"
+            name="fitness-outline"
             size={22}
             color="#FFFFFF"
             style={{ opacity: 0.6 }}
@@ -267,7 +384,25 @@ function ProgressRing({ progress }: { progress: number }) {
 
 const styles = StyleSheet.create({
   bg: { flex: 1, backgroundColor: "#070A0F" },
-  container: { flex: 1, paddingHorizontal: 18, paddingTop: 14 },
+
+  container: {
+    flex: 1,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+  },
+
+  loadingScreen: {
+    flex: 1,
+    backgroundColor: "#070A0F",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  loadingText: {
+    color: "white",
+    marginTop: 12,
+    fontWeight: "700",
+  },
 
   topBar: {
     flexDirection: "row",
@@ -275,17 +410,37 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 8,
   },
-  brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  brand: { color: "#FFFFFF", fontSize: 22, letterSpacing: 0.5 },
 
-  centerWrap: { alignItems: "center", marginTop: 10, marginBottom: 16 },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  brand: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    letterSpacing: 0.5,
+  },
+
+  centerWrap: {
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 16,
+  },
+
   timeOverlay: {
     position: "absolute",
     top: 78,
     alignItems: "center",
     justifyContent: "center",
   },
-  timeText: { fontSize: 54, fontWeight: "900" },
+
+  timeText: {
+    fontSize: 54,
+    fontWeight: "900",
+  },
+
   timeWhite: { color: "#FFFFFF" },
   timeBlue: { color: "#2E8BFF" },
   timeColon: { color: "rgba(255,255,255,0.85)" },
@@ -296,6 +451,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   ringBlue: {
     position: "absolute",
     width: 210,
@@ -308,6 +464,7 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 8,
   },
+
   ringOrange: {
     position: "absolute",
     width: 210,
@@ -316,6 +473,7 @@ const styles = StyleSheet.create({
     borderWidth: 10,
     borderColor: "#FF7A00",
   },
+
   ringCenter: {
     width: 170,
     height: 170,
@@ -323,13 +481,24 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.55)",
   },
 
-  infoWrap: { alignItems: "center", gap: 6, marginBottom: 8 },
+  infoWrap: {
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
+
   roundText: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 18,
     fontWeight: "700",
   },
-  restRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+
+  restRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+
   restText: {
     color: "rgba(255,255,255,0.75)",
     fontSize: 18,
@@ -338,10 +507,38 @@ const styles = StyleSheet.create({
 
   bigTitle: {
     textAlign: "center",
-    fontSize: 44,
+    fontSize: 34,
     fontWeight: "900",
     marginTop: 8,
+    marginBottom: 10,
+    color: "#FFFFFF",
+    paddingHorizontal: 12,
+  },
+
+  roundDescription: {
+    color: "rgba(255,255,255,0.78)",
+    textAlign: "center",
+    fontSize: 16,
+    lineHeight: 22,
+    marginBottom: 14,
+    paddingHorizontal: 12,
+  },
+
+  imageTag: {
+    flexDirection: "row",
+    alignSelf: "center",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     marginBottom: 18,
+  },
+
+  imageTagText: {
+    color: "rgba(255,255,255,0.82)",
+    fontWeight: "600",
   },
 
   actionsRow: {
@@ -359,14 +556,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
+
   blueBtn: {
     backgroundColor: "#2E8BFF",
   },
+
   blueBtnText: {
     color: "#FFFFFF",
     textAlign: "center",
     fontWeight: "900",
-    lineHeight: 18,
+    lineHeight: 20,
   },
 
   midBtn: {
@@ -380,23 +579,30 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,122,0,0.35)",
     backgroundColor: "rgba(255,122,0,0.20)",
   },
-  orangeBtn: {},
+
   disabledBtn: {
     opacity: 0.7,
   },
+
   stopSquare: {
     width: 22,
     height: 22,
     borderRadius: 4,
     backgroundColor: "#FF7A00",
   },
-  orangeBtnText: { color: "#FFFFFF", fontWeight: "900", fontSize: 16 },
+
+  orangeBtnText: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+    fontSize: 16,
+  },
 
   whiteBtn: {
     backgroundColor: "#FFFFFF",
     borderWidth: 2,
     borderColor: "rgba(46,139,255,0.5)",
   },
+
   whiteBtnText: {
     color: "#2E8BFF",
     textAlign: "center",
