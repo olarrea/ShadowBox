@@ -10,50 +10,68 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../../firebaseConfig";
 
-type Workout = {
-  id: string;
-  title: string;
-  description?: string;
-  level: string;
-  estimatedMinutes: number;
-  createdBy?: string;
-  rounds?: any[];
+type LastWorkout = {
+  id?: string;
+  title?: string;
+  estimatedMinutes?: number;
+  level?: string;
+  roundsCount?: number;
 };
 
 export default function TrainHubScreen() {
-  const [workout, setWorkout] = useState<Workout | null>(null);
+  const [lastWorkout, setLastWorkout] = useState<LastWorkout | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadWorkout();
+    loadLastWorkout();
   }, []);
 
-  async function loadWorkout() {
+  async function loadLastWorkout() {
     try {
-      const querySnapshot = await getDocs(collection(db, "workouts"));
+      const user = auth.currentUser;
 
-      if (!querySnapshot.empty) {
-        const firstDoc = querySnapshot.docs[0];
-        setWorkout({
-          id: firstDoc.id,
-          ...(firstDoc.data() as Omit<Workout, "id">),
+      if (!user) {
+        setLastWorkout(null);
+        return;
+      }
+
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        setLastWorkout(null);
+        return;
+      }
+
+      const userData = userSnap.data();
+
+      if (userData.lastWorkoutId) {
+        setLastWorkout({
+          id: userData.lastWorkoutId,
+          title: userData.lastWorkoutTitle || "Entrenamiento",
+          estimatedMinutes: userData.lastWorkoutMinutes || 0,
+          level: userData.lastWorkoutLevel || "basico",
+          roundsCount: userData.lastWorkoutRounds || 0,
         });
+      } else {
+        setLastWorkout(null);
       }
     } catch (error) {
-      console.log("ERROR CARGANDO WORKOUTS:", error);
+      console.log("ERROR CARGANDO ÚLTIMO ENTRENAMIENTO:", error);
     } finally {
       setLoading(false);
     }
   }
 
-  function goToWorkoutDetail() {
-    if (!workout) return;
+  function goToLastWorkoutDetail() {
+    if (!lastWorkout?.id) return;
+
     router.push({
       pathname: "/workout-detail",
-      params: { workoutId: workout.id },
+      params: { workoutId: lastWorkout.id },
     } as any);
   }
 
@@ -75,17 +93,19 @@ export default function TrainHubScreen() {
             <ActivityIndicator size="large" color="#FF7A00" />
             <Text style={styles.loadingText}>Cargando entrenamiento...</Text>
           </View>
-        ) : workout ? (
-          <Pressable style={styles.mainCard} onPress={goToWorkoutDetail}>
+        ) : lastWorkout ? (
+          <Pressable style={styles.mainCard} onPress={goToLastWorkoutDetail}>
             <View style={styles.mainCardTextWrap}>
-              <Text style={styles.mainCardSmall}>Plan actual</Text>
-              <Text style={styles.mainCardTitle}>{workout.title}</Text>
+              <Text style={styles.mainCardSmall}>Último entrenamiento realizado</Text>
+              <Text style={styles.mainCardTitle}>{lastWorkout.title}</Text>
               <Text style={styles.mainCardInfo}>
-                {(workout.rounds?.length || 0) > 0
-                  ? `${workout.rounds?.length} rondas`
+                {(lastWorkout.roundsCount || 0) > 0
+                  ? `${lastWorkout.roundsCount} rondas`
                   : "Rondas por definir"}{" "}
-                · {workout.estimatedMinutes} min ·{" "}
-                {workout.level.charAt(0).toUpperCase() + workout.level.slice(1)}
+                · {lastWorkout.estimatedMinutes || 0} min ·{" "}
+                {lastWorkout.level
+                  ? lastWorkout.level.charAt(0).toUpperCase() + lastWorkout.level.slice(1)
+                  : "Básico"}
               </Text>
             </View>
 
@@ -94,11 +114,17 @@ export default function TrainHubScreen() {
             </View>
           </Pressable>
         ) : (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No hay entrenamientos cargados</Text>
-            <Text style={styles.emptyText}>
-              Crea o añade un entrenamiento en Firebase para empezar.
-            </Text>
+          <View style={styles.emptyTopCard}>
+            <View style={styles.emptyTopLeft}>
+              <Text style={styles.mainCardSmall}>Último entrenamiento realizado</Text>
+              <Text style={styles.emptyTopTitle}>
+                Aún no has realizado ningún entrenamiento
+              </Text>
+            </View>
+
+            <View style={styles.emptyPlayCircle}>
+              <Ionicons name="time-outline" size={28} color="#fff" />
+            </View>
           </View>
         )}
 
@@ -124,26 +150,9 @@ export default function TrainHubScreen() {
           </Pressable>
 
           <Pressable style={[styles.card, styles.orangeCard]}>
-            <Ionicons name="add-circle-outline" size={30} color="#FF7A00" />
-            <Text style={styles.cardTitle}>Crear rutina</Text>
-            <Text style={styles.cardText}>Diseña un entrenamiento</Text>
-          </Pressable>
-        </View>
-
-        <Text style={styles.sectionTitle}>Última sesión</Text>
-
-        <View style={styles.lastSessionCard}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.lastSessionTitle}>
-              {workout?.title || "Shadowboxing básico"}
-            </Text>
-            <Text style={styles.lastSessionInfo}>
-              Última vez: hoy · {workout?.estimatedMinutes || 20} min
-            </Text>
-          </View>
-
-          <Pressable style={styles.repeatBtn} onPress={goToWorkoutDetail}>
-            <Text style={styles.repeatBtnText}>Repetir</Text>
+            <Ionicons name="albums-outline" size={30} color="#FF7A00" />
+            <Text style={styles.cardTitle}>Entrenos app</Text>
+            <Text style={styles.cardText}>Rutinas incluidas en ShadowBox</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -204,6 +213,46 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.28,
     shadowRadius: 16,
     elevation: 8,
+  },
+
+  emptyTopCard: {
+    backgroundColor: "rgba(0,0,0,0.72)",
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: "rgba(255,122,0,0.35)",
+    padding: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+
+  emptyTopLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+
+  emptyTopTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "900",
+    marginBottom: 8,
+    lineHeight: 28,
+  },
+
+  emptyTopText: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+
+  emptyPlayCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "rgba(255,122,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   mainCardTextWrap: {
@@ -286,62 +335,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 6,
     lineHeight: 18,
-  },
-
-  lastSessionCard: {
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 18,
-    padding: 18,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.12)",
-  },
-
-  lastSessionTitle: {
-    color: "#fff",
-    fontSize: 17,
-    fontWeight: "800",
-    marginBottom: 5,
-  },
-
-  lastSessionInfo: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 13,
-  },
-
-  repeatBtn: {
-    backgroundColor: "#2E8BFF",
-    borderRadius: 14,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    marginLeft: 12,
-  },
-
-  repeatBtnText: {
-    color: "#fff",
-    fontWeight: "800",
-  },
-
-  emptyCard: {
-    backgroundColor: "rgba(0,0,0,0.62)",
-    borderRadius: 22,
-    padding: 22,
-    marginBottom: 24,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.12)",
-  },
-
-  emptyTitle: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "800",
-    marginBottom: 8,
-  },
-
-  emptyText: {
-    color: "rgba(255,255,255,0.72)",
-    lineHeight: 20,
   },
 });

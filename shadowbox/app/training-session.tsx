@@ -204,7 +204,6 @@ export default function TrainScreen() {
       const currentTotalTime = currentData.totalTime ?? 0;
 
       const sessionMinutes = Math.max(1, Math.ceil(totalSecondsUsed / 60));
-
       const newSessions = currentSessions + 1;
       const newTotalTime = currentTotalTime + sessionMinutes;
       const newLevel = Math.floor(newSessions / 5) + 1;
@@ -213,6 +212,14 @@ export default function TrainScreen() {
         sessions: newSessions,
         totalTime: newTotalTime,
         level: newLevel,
+
+        // último entrenamiento realizado
+        lastWorkoutId: String(workoutId || ""),
+        lastWorkoutTitle: workout?.title || "Entrenamiento",
+        lastWorkoutMinutes: workout?.estimatedMinutes || sessionMinutes,
+        lastWorkoutLevel: workout?.level || "basico",
+        lastWorkoutRounds: rounds.length,
+        lastCompletedAt: new Date().toISOString(),
       });
 
       Alert.alert(
