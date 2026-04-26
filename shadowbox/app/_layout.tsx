@@ -14,6 +14,7 @@ export default function RootLayout() {
       <Stack.Screen name="workout-detail" />
       <Stack.Screen name="favorites" />
       <Stack.Screen name="offline-workouts" />
+      <Stack.Screen name="workouts" />
     </Stack>
   );
 }

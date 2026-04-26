@@ -155,7 +155,10 @@ export default function TrainHubScreen() {
             <Text style={styles.cardText}>Rutinas creadas por ti</Text>
           </Pressable>
 
-          <Pressable style={[styles.card, styles.orangeCard]}>
+          <Pressable
+            style={[styles.card, styles.orangeCard]}
+            onPress={() => router.push({ pathname: "/workouts" } as any)}
+          >
             <Ionicons name="albums-outline" size={30} color="#FF7A00" />
             <Text style={styles.cardTitle}>Entrenos app</Text>
             <Text style={styles.cardText}>Rutinas incluidas en ShadowBox</Text>
