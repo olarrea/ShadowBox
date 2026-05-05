@@ -219,21 +219,6 @@ export default function WorkoutDetailScreen() {
           <Text style={styles.heroTitle}>{workout.title}</Text>
           <Text style={styles.heroDescription}>{workout.description}</Text>
 
-          <View style={styles.badgesRow}>
-            <View style={styles.badgeOrange}>
-              <Text style={styles.badgeText}>{formatLevel(workout.level)}</Text>
-            </View>
-
-            <View style={styles.badgeBlue}>
-              <Text style={styles.badgeText}>{workout.estimatedMinutes} min</Text>
-            </View>
-
-            <View style={styles.badgeGray}>
-              <Text style={styles.badgeText}>
-                {workout.rounds?.length || 0} rondas
-              </Text>
-            </View>
-          </View>
         </View>
 
         <Text style={styles.sectionTitle}>Resumen</Text>

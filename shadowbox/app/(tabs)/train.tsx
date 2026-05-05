@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../firebaseConfig";
+import { useFocusEffect } from "@react-navigation/native";
 
 type LastWorkout = {
   id?: string;
@@ -25,9 +26,11 @@ export default function TrainHubScreen() {
   const [lastWorkout, setLastWorkout] = useState<LastWorkout | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadLastWorkout();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadLastWorkout();
+    }, [])
+  );
 
   async function loadLastWorkout() {
     try {
