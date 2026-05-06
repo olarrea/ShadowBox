@@ -152,7 +152,10 @@ export default function TrainHubScreen() {
             <Text style={styles.cardText}>Tus rutinas guardadas</Text>
           </Pressable>
 
-          <Pressable style={[styles.card, styles.blueCard]}>
+          <Pressable
+            style={[styles.card, styles.blueCard]}
+            onPress={() => router.push({ pathname: "/my-workouts" } as any)}
+          >
             <Ionicons name="create-outline" size={30} color="#2E8BFF" />
             <Text style={styles.cardTitle}>Mis entrenos</Text>
             <Text style={styles.cardText}>Rutinas creadas por ti</Text>
