@@ -1,67 +1,101 @@
-import { View, Text, StyleSheet, ImageBackground, Pressable } from "react-native";
+import React, { useCallback, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageBackground,
+  Pressable,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../../firebaseConfig";
+
+type UserData = {
+  name?: string;
+  email?: string;
+  level?: number;
+  photo?: string | null;
+};
 
 export default function HomeScreen() {
+  const [userData, setUserData] = useState<UserData | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadUserData();
+    }, [])
+  );
+
+  async function loadUserData() {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        setUserData(userSnap.data() as UserData);
+      }
+    } catch (error) {
+      console.log("ERROR CARGANDO HOME:", error);
+    }
+  }
+
   return (
     <ImageBackground
       source={require("../../assets/images/ring-bg.png")}
       style={styles.container}
       resizeMode="cover"
+      imageStyle={{ opacity: 0.65 }}
     >
-      <View style={styles.header}>
-        <View style={styles.avatar} />
+      <View style={styles.profileCard}>
+        <View style={styles.avatar}>
+          <Ionicons name="person" size={34} color="#FFFFFF" />
+        </View>
+
         <View>
-          <Text style={styles.hello}>Hola,</Text>
-          <Text style={styles.name}>Oier</Text>
+          <Text style={styles.name}>
+            {userData?.name || userData?.email || "Usuario"}
+          </Text>
+          <Text style={styles.level}>Nivel {userData?.level || 1}</Text>
         </View>
       </View>
 
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Ionicons name="hand-left" size={26} color="#4da3ff" />
-          <Text style={styles.statText}>Sesiones</Text>
-          <Text style={styles.statValue}>18</Text>
-        </View>
+      <View style={styles.infoCard}>
+        <Text style={styles.infoTitle}>¿Qué es ShadowBox?</Text>
 
-        <View style={styles.statCard}>
-          <Ionicons name="time-outline" size={26} color="#ff9f43" />
-          <Text style={styles.statText}>Tiempo</Text>
-          <Text style={styles.statValue}>4h 30m</Text>
-        </View>
+        <Text style={styles.infoText}>
+          ShadowBox es una aplicación móvil diseñada para entrenar boxeo en casa
+          de forma estructurada, accesible y motivadora.
+        </Text>
+
+        <Text style={styles.infoText}>
+          Puedes seguir entrenamientos, crear tus propias rutinas, guardar tus
+          favoritos, descargar sesiones y consultar tu progreso personal.
+        </Text>
+
+        <Text style={styles.infoText}>
+          Su objetivo es ayudarte a mejorar técnica, resistencia y constancia
+          mediante planes claros y entrenamientos adaptados a tu nivel.
+        </Text>
       </View>
 
-      <View style={styles.grid}>
-        <Pressable
-          style={[styles.card, styles.blueGlow]}
-          onPress={() => router.push("/train")}
-        >
-          <Ionicons name="hand-left-outline" size={42} color="#4da3ff" />
-          <Text style={styles.cardText}>Entrenar ahora</Text>
-        </Pressable>
+      <Pressable
+        style={styles.createButton}
+        onPress={() => router.push({ pathname: "/create-workout" } as any)}
+      >
+        <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
+        <Text style={styles.createButtonText}>Crear entrenamiento</Text>
+      </Pressable>
 
-        <Link href={{ pathname: "/generate" } as any} asChild>
-          <Pressable style={[styles.card, styles.orangeGlow]}>
-            <Ionicons name="navigate-outline" size={42} color="#ff9f43" />
-            <Text style={styles.cardText}>Generar plan</Text>
-          </Pressable>
-        </Link>
-
-        <Pressable
-          style={[styles.card, styles.blueGlow]}
-          onPress={() => router.push("/community")}
-        >
-          <Ionicons name="people-outline" size={42} color="#4da3ff" />
-          <Text style={styles.cardText}>Comunidad</Text>
-        </Pressable>
-
-        <Pressable
-          style={[styles.card, styles.orangeGlow]}
-          onPress={() => router.push("/progress")}
-        >
-          <Ionicons name="bar-chart-outline" size={42} color="#ff9f43" />
-          <Text style={styles.cardText}>Progreso</Text>
-        </Pressable>
+      <View style={styles.motivationCard}>
+        <Ionicons name="flash-outline" size={22} color="#FF7A00" />
+        <Text style={styles.motivationText}>
+          “El campeón se construye ronda a ronda.”
+        </Text>
       </View>
     </ImageBackground>
   );
@@ -71,93 +105,104 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    paddingTop: 58,
+    backgroundColor: "#070A0F",
   },
 
-  header: {
+  profileCard: {
+    backgroundColor: "rgba(0,0,0,0.72)",
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: "rgba(255,122,0,0.55)",
+    padding: 18,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 22,
   },
 
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#111",
-    marginRight: 12,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#ff9f43",
-  },
-
-  hello: {
-    color: "#ccc",
-    fontSize: 16,
+    borderColor: "#FFFFFF",
+    marginRight: 16,
   },
 
   name: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "bold",
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "900",
+    maxWidth: 230,
   },
 
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  level: {
+    color: "#FF7A00",
+    fontSize: 16,
+    fontWeight: "800",
+    marginTop: 4,
+  },
+
+  infoCard: {
+    backgroundColor: "rgba(0,0,0,0.68)",
+    borderRadius: 24,
+    padding: 22,
+    borderWidth: 1.5,
+    borderColor: "rgba(46,139,255,0.4)",
     marginBottom: 24,
   },
 
-  statCard: {
-    flex: 1,
-    marginHorizontal: 6,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 16,
-    padding: 14,
-    alignItems: "center",
+  infoTitle: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "900",
+    marginBottom: 14,
   },
 
-  statText: {
-    color: "#aaa",
-    fontSize: 12,
-    marginTop: 6,
+  infoText: {
+    color: "rgba(255,255,255,0.78)",
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 12,
   },
 
-  statValue: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-
-  grid: {
+  createButton: {
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: "#FF7A00",
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-
-  card: {
-    width: "48%",
-    height: 140,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    borderRadius: 20,
-    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 24,
   },
 
-  cardText: {
-    color: "#fff",
+  createButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+
+  motivationCard: {
+    marginTop: "auto",
+    backgroundColor: "rgba(0,0,0,0.62)",
+    borderRadius: 20,
+    padding: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,122,0,0.35)",
+  },
+
+  motivationText: {
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
-    marginTop: 10,
-    textAlign: "center",
-  },
-
-  blueGlow: {
-    borderWidth: 2,
-    borderColor: "#4da3ff",
-  },
-
-  orangeGlow: {
-    borderWidth: 2,
-    borderColor: "#ff9f43",
+    fontWeight: "800",
+    marginLeft: 10,
+    flex: 1,
+    lineHeight: 22,
   },
 });
