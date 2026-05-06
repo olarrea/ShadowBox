@@ -14,12 +14,66 @@ import { router } from "expo-router";
 import { addDoc, collection } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
+type WorkoutRound = {
+  title: string;
+  description: string;
+  duration: string;
+  image: string;
+};
+
 export default function CreateWorkoutScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [level, setLevel] = useState<"basico" | "intermedio" | "experto">("basico");
-  const [duration, setDuration] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [rounds, setRounds] = useState<WorkoutRound[]>([
+    {
+      title: "",
+      description: "",
+      duration: "",
+      image: "custom",
+    },
+  ]);
+
+  function updateRound(index: number, field: keyof WorkoutRound, value: string) {
+    const updatedRounds = [...rounds];
+    updatedRounds[index] = {
+      ...updatedRounds[index],
+      [field]: value,
+    };
+    setRounds(updatedRounds);
+  }
+
+  function addRound() {
+    setRounds([
+      ...rounds,
+      {
+        title: "",
+        description: "",
+        duration: "",
+        image: "custom",
+      },
+    ]);
+  }
+
+  function removeRound(index: number) {
+    if (rounds.length === 1) {
+      Alert.alert("Aviso", "El entrenamiento debe tener al menos una ronda.");
+      return;
+    }
+
+    setRounds(rounds.filter((_, i) => i !== index));
+  }
+
+  function calculateEstimatedMinutes() {
+    const totalSeconds = rounds.reduce((total, round) => {
+      const seconds = Number(round.duration);
+      return total + (Number.isNaN(seconds) ? 0 : seconds);
+    }, 0);
+
+    return Math.max(1, Math.ceil(totalSeconds / 60));
+  }
 
   async function saveWorkout() {
     try {
@@ -30,34 +84,41 @@ export default function CreateWorkoutScreen() {
         return;
       }
 
-      if (!title.trim() || !description.trim() || !duration.trim()) {
-        Alert.alert("Error", "Completa todos los campos.");
+      if (!title.trim() || !description.trim()) {
+        Alert.alert("Error", "Completa el nombre y la descripción.");
         return;
       }
 
-      const minutes = Number(duration);
+      for (const round of rounds) {
+        if (!round.title.trim() || !round.description.trim() || !round.duration.trim()) {
+          Alert.alert("Error", "Completa todos los campos de cada ronda.");
+          return;
+        }
 
-      if (Number.isNaN(minutes) || minutes <= 0) {
-        Alert.alert("Error", "La duración debe ser un número válido.");
-        return;
+        const durationNumber = Number(round.duration);
+
+        if (Number.isNaN(durationNumber) || durationNumber <= 0) {
+          Alert.alert("Error", "La duración de cada ronda debe ser un número válido.");
+          return;
+        }
       }
 
       setSaving(true);
+
+      const parsedRounds = rounds.map((round) => ({
+        title: round.title.trim(),
+        description: round.description.trim(),
+        duration: Number(round.duration),
+        image: round.image.trim() || "custom",
+      }));
 
       await addDoc(collection(db, "workouts"), {
         title: title.trim(),
         description: description.trim(),
         level,
-        estimatedMinutes: minutes,
+        estimatedMinutes: calculateEstimatedMinutes(),
         createdBy: user.uid,
-        rounds: [
-          {
-            title: "Ronda principal",
-            description: description.trim(),
-            duration: minutes * 60,
-            image: "custom",
-          },
-        ],
+        rounds: parsedRounds,
         createdAt: new Date().toISOString(),
       });
 
@@ -94,6 +155,8 @@ export default function CreateWorkoutScreen() {
         </View>
 
         <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Datos generales</Text>
+
           <Text style={styles.label}>Nombre del entrenamiento</Text>
           <TextInput
             value={title}
@@ -103,7 +166,7 @@ export default function CreateWorkoutScreen() {
             style={styles.input}
           />
 
-          <Text style={styles.label}>Descripción</Text>
+          <Text style={styles.label}>Descripción general</Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
@@ -132,33 +195,82 @@ export default function CreateWorkoutScreen() {
               </Pressable>
             ))}
           </View>
+        </View>
 
-          <Text style={styles.label}>Duración estimada en minutos</Text>
-          <TextInput
-            value={duration}
-            onChangeText={setDuration}
-            placeholder="Ej: 20"
-            placeholderTextColor="rgba(255,255,255,0.45)"
-            keyboardType="numeric"
-            style={styles.input}
-          />
-
-          <Pressable
-            style={[styles.saveBtn, saving && { opacity: 0.7 }]}
-            onPress={saveWorkout}
-            disabled={saving}
-          >
-            <Ionicons name="save-outline" size={20} color="white" />
-            <Text style={styles.saveBtnText}>
-              {saving ? "Guardando..." : "Guardar entrenamiento"}
+        <View style={styles.card}>
+          <View style={styles.roundsHeader}>
+            <Text style={styles.sectionTitle}>Rondas</Text>
+            <Text style={styles.estimatedText}>
+              {calculateEstimatedMinutes()} min aprox.
             </Text>
+          </View>
+
+          {rounds.map((round, index) => (
+            <View key={index} style={styles.roundCard}>
+              <View style={styles.roundTop}>
+                <Text style={styles.roundTitle}>Ronda {index + 1}</Text>
+
+                <Pressable onPress={() => removeRound(index)}>
+                  <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+                </Pressable>
+              </View>
+
+              <Text style={styles.label}>Nombre de la ronda</Text>
+              <TextInput
+                value={round.title}
+                onChangeText={(value) => updateRound(index, "title", value)}
+                placeholder="Ej: Jab + Cross"
+                placeholderTextColor="rgba(255,255,255,0.45)"
+                style={styles.input}
+              />
+
+              <Text style={styles.label}>Descripción</Text>
+              <TextInput
+                value={round.description}
+                onChangeText={(value) => updateRound(index, "description", value)}
+                placeholder="Explica cómo hacer el ejercicio"
+                placeholderTextColor="rgba(255,255,255,0.45)"
+                multiline
+                style={[styles.input, styles.roundTextArea]}
+              />
+
+              <Text style={styles.label}>Duración en segundos</Text>
+              <TextInput
+                value={round.duration}
+                onChangeText={(value) => updateRound(index, "duration", value)}
+                placeholder="Ej: 180"
+                placeholderTextColor="rgba(255,255,255,0.45)"
+                keyboardType="numeric"
+                style={styles.input}
+              />
+
+              <Text style={styles.label}>Imagen / referencia visual</Text>
+              <TextInput
+                value={round.image}
+                onChangeText={(value) => updateRound(index, "image", value)}
+                placeholder="Ej: shadowboxing"
+                placeholderTextColor="rgba(255,255,255,0.45)"
+                style={styles.input}
+              />
+            </View>
+          ))}
+
+          <Pressable style={styles.addRoundBtn} onPress={addRound}>
+            <Ionicons name="add-circle-outline" size={20} color="#2E8BFF" />
+            <Text style={styles.addRoundText}>Añadir ronda</Text>
           </Pressable>
         </View>
 
-        <Text style={styles.note}>
-          De momento se crea una ronda principal automática. Más adelante
-          añadiremos edición avanzada de rondas.
-        </Text>
+        <Pressable
+          style={[styles.saveBtn, saving && { opacity: 0.7 }]}
+          onPress={saveWorkout}
+          disabled={saving}
+        >
+          <Ionicons name="save-outline" size={20} color="white" />
+          <Text style={styles.saveBtnText}>
+            {saving ? "Guardando..." : "Guardar entrenamiento"}
+          </Text>
+        </Pressable>
       </ScrollView>
     </ImageBackground>
   );
@@ -172,7 +284,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     paddingTop: 54,
-    paddingBottom: 30,
+    paddingBottom: 34,
   },
   topBar: {
     flexDirection: "row",
@@ -191,6 +303,13 @@ const styles = StyleSheet.create({
     padding: 20,
     borderWidth: 1.5,
     borderColor: "rgba(255,122,0,0.4)",
+    marginBottom: 18,
+  },
+  sectionTitle: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "900",
+    marginBottom: 8,
   },
   label: {
     color: "white",
@@ -211,6 +330,11 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 110,
+    paddingTop: 14,
+    textAlignVertical: "top",
+  },
+  roundTextArea: {
+    minHeight: 92,
     paddingTop: 14,
     textAlignVertical: "top",
   },
@@ -240,9 +364,52 @@ const styles = StyleSheet.create({
   levelTextActive: {
     color: "white",
   },
+  roundsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  estimatedText: {
+    color: "#2E8BFF",
+    fontWeight: "800",
+  },
+  roundCard: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 18,
+    padding: 14,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  roundTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  roundTitle: {
+    color: "#FF7A00",
+    fontSize: 17,
+    fontWeight: "900",
+  },
+  addRoundBtn: {
+    marginTop: 18,
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "rgba(46,139,255,0.5)",
+    backgroundColor: "rgba(46,139,255,0.14)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  addRoundText: {
+    color: "#2E8BFF",
+    fontSize: 16,
+    fontWeight: "800",
+  },
   saveBtn: {
-    marginTop: 24,
-    height: 56,
+    height: 58,
     borderRadius: 18,
     backgroundColor: "#FF7A00",
     flexDirection: "row",
@@ -254,11 +421,5 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 17,
     fontWeight: "800",
-  },
-  note: {
-    color: "rgba(255,255,255,0.68)",
-    textAlign: "center",
-    marginTop: 18,
-    lineHeight: 20,
   },
 });

@@ -89,7 +89,7 @@ export default function MyWorkoutsScreen() {
             <Ionicons name="create-outline" size={34} color="#2E8BFF" />
             <Text style={styles.emptyTitle}>Aún no has creado entrenamientos</Text>
             <Text style={styles.emptyText}>
-              Más adelante podrás crear tus propias rutinas desde la pantalla Home.
+              Puedes crear tus propias rutinas desde el botón “Crear entrenamiento” de la pantalla Home.
             </Text>
           </View>
         ) : (
