@@ -11,7 +11,14 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../firebaseConfig";
-import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { router, useLocalSearchParams } from "expo-router";
 
 type WorkoutRound = {
@@ -48,12 +55,15 @@ export default function WorkoutDetailScreen() {
   const [downloaded, setDownloaded] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [downloadLoading, setDownloadLoading] = useState(false);
+  const [averageRating, setAverageRating] = useState(0);
+  const [userRating, setUserRating] = useState(0);
 
   useEffect(() => {
     if (workoutId) {
       loadWorkout();
       checkFavorite();
       checkDownloaded();
+      loadRatings();
     }
   }, [workoutId]);
 
@@ -69,6 +79,88 @@ export default function WorkoutDetailScreen() {
       console.log("ERROR CARGANDO WORKOUT DETAIL:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadRatings() {
+    try {
+      if (!workoutId) return;
+
+      const ratingsRef = collection(
+        db,
+        "workouts",
+        String(workoutId),
+        "ratings"
+      );
+
+      const snap = await getDocs(ratingsRef);
+
+      if (snap.empty) {
+        setAverageRating(0);
+        setUserRating(0);
+        return;
+      }
+
+      let total = 0;
+
+      snap.docs.forEach((ratingDoc) => {
+        total += ratingDoc.data().value || 0;
+      });
+
+      const average = total / snap.docs.length;
+      setAverageRating(Number(average.toFixed(1)));
+
+      const user = auth.currentUser;
+
+      if (user) {
+        const userRatingRef = doc(
+          db,
+          "workouts",
+          String(workoutId),
+          "ratings",
+          user.uid
+        );
+
+        const userRatingSnap = await getDoc(userRatingRef);
+
+        if (userRatingSnap.exists()) {
+          setUserRating(userRatingSnap.data().value || 0);
+        }
+      }
+    } catch (error) {
+      console.log("ERROR CARGANDO VALORACIONES:", error);
+    }
+  }
+
+  async function rateWorkout(value: number) {
+    try {
+      const user = auth.currentUser;
+
+      if (!user) {
+        Alert.alert("Error", "Debes iniciar sesión para valorar.");
+        return;
+      }
+
+      if (!workoutId) return;
+
+      const ratingRef = doc(
+        db,
+        "workouts",
+        String(workoutId),
+        "ratings",
+        user.uid
+      );
+
+      await setDoc(ratingRef, {
+        value,
+        ratedAt: new Date().toISOString(),
+      });
+
+      setUserRating(value);
+      await loadRatings();
+    } catch (error) {
+      console.log("ERROR VALORANDO ENTRENAMIENTO:", error);
+      Alert.alert("Error", "No se pudo guardar la valoración.");
     }
   }
 
@@ -91,7 +183,13 @@ export default function WorkoutDetailScreen() {
       const user = auth.currentUser;
       if (!user) return;
 
-      const downloadRef = doc(db, "users", user.uid, "downloads", String(workoutId));
+      const downloadRef = doc(
+        db,
+        "users",
+        user.uid,
+        "downloads",
+        String(workoutId)
+      );
       const downloadSnap = await getDoc(downloadRef);
 
       setDownloaded(downloadSnap.exists());
@@ -149,7 +247,13 @@ export default function WorkoutDetailScreen() {
 
       setDownloadLoading(true);
 
-      const downloadRef = doc(db, "users", user.uid, "downloads", String(workoutId));
+      const downloadRef = doc(
+        db,
+        "users",
+        user.uid,
+        "downloads",
+        String(workoutId)
+      );
 
       if (downloaded) {
         await deleteDoc(downloadRef);
@@ -219,6 +323,12 @@ export default function WorkoutDetailScreen() {
           <Text style={styles.heroTitle}>{workout.title}</Text>
           <Text style={styles.heroDescription}>{workout.description}</Text>
 
+          <View style={styles.ratingMiniRow}>
+            <Ionicons name="star" size={18} color="#FF7A00" />
+            <Text style={styles.ratingMiniText}>
+              {averageRating}/5 valoración media
+            </Text>
+          </View>
         </View>
 
         <Text style={styles.sectionTitle}>Resumen</Text>
@@ -312,7 +422,10 @@ export default function WorkoutDetailScreen() {
         </Pressable>
 
         <Pressable
-          style={[styles.secondaryBlueBtn, downloaded && styles.secondaryBlueBtnActive]}
+          style={[
+            styles.secondaryBlueBtn,
+            downloaded && styles.secondaryBlueBtnActive,
+          ]}
           onPress={toggleDownload}
           disabled={downloadLoading}
         >
@@ -325,6 +438,26 @@ export default function WorkoutDetailScreen() {
             {downloaded ? "Quitar de descargados" : "Descargar entrenamiento"}
           </Text>
         </Pressable>
+
+        <View style={styles.ratingCard}>
+          <Text style={styles.ratingTitle}>Valora este entrenamiento</Text>
+
+          <View style={styles.starsRow}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Pressable key={star} onPress={() => rateWorkout(star)}>
+                <Ionicons
+                  name={star <= userRating ? "star" : "star-outline"}
+                  size={34}
+                  color="#FF7A00"
+                />
+              </Pressable>
+            ))}
+          </View>
+
+          <Text style={styles.averageText}>
+            Valoración media: {averageRating}/5
+          </Text>
+        </View>
       </ScrollView>
     </ImageBackground>
   );
@@ -393,39 +526,18 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.78)",
     fontSize: 15,
     lineHeight: 22,
-    marginBottom: 16,
+    marginBottom: 14,
   },
 
-  badgesRow: {
+  ratingMiniRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
+    alignItems: "center",
+    gap: 8,
   },
 
-  badgeOrange: {
-    backgroundColor: "rgba(255,122,0,0.25)",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-
-  badgeBlue: {
-    backgroundColor: "rgba(46,139,255,0.25)",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-
-  badgeGray: {
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-
-  badgeText: {
-    color: "#fff",
-    fontWeight: "800",
+  ratingMiniText: {
+    color: "rgba(255,255,255,0.8)",
+    fontWeight: "700",
   },
 
   sectionTitle: {
@@ -609,4 +721,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
-}); 
+
+  ratingCard: {
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 20,
+    padding: 18,
+    marginTop: 16,
+    marginBottom: 18,
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,122,0,0.25)",
+  },
+
+  ratingTitle: {
+    color: "white",
+    fontSize: 17,
+    fontWeight: "800",
+    marginBottom: 14,
+  },
+
+  starsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 14,
+  },
+
+  averageText: {
+    color: "rgba(255,255,255,0.75)",
+    fontWeight: "700",
+  },
+});
