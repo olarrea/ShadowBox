@@ -91,6 +91,14 @@ export default function HomeScreen() {
         <Text style={styles.createButtonText}>Crear entrenamiento</Text>
       </Pressable>
 
+      <Pressable
+        style={styles.progressButton}
+        onPress={() => router.push({ pathname: "/progress" } as any)}
+      >
+        <Ionicons name="bar-chart-outline" size={22} color="#FFFFFF" />
+        <Text style={styles.progressButtonText}>Ver progreso</Text>
+      </Pressable>
+
       <View style={styles.motivationCard}>
         <Ionicons name="flash-outline" size={22} color="#FF7A00" />
         <Text style={styles.motivationText}>
@@ -204,5 +212,22 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     flex: 1,
     lineHeight: 22,
+  },
+
+  progressButton: {
+  height: 56,
+  borderRadius: 18,
+  backgroundColor: "rgba(46,139,255,0.85)",
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 10,
+  marginBottom: 24,
+  },
+
+  progressButtonText: {
+  color: "#FFFFFF",
+  fontSize: 17,
+  fontWeight: "900",
   },
 });

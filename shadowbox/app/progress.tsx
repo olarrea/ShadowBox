@@ -1,185 +1,326 @@
-import { View, Text, StyleSheet, ImageBackground, Pressable } from "react-native";
+import React, { useCallback, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageBackground,
+  Pressable,
+  ScrollView,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../firebaseConfig";
+
+type UserStats = {
+  sessions?: number;
+  totalTime?: number;
+  level?: number;
+  lastWorkoutTitle?: string;
+  lastWorkoutMinutes?: number;
+  lastWorkoutRounds?: number;
+};
 
 export default function ProgressScreen() {
+  const [stats, setStats] = useState<UserStats>({
+    sessions: 0,
+    totalTime: 0,
+    level: 1,
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      loadStats();
+    }, [])
+  );
+
+  async function loadStats() {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+
+      if (snap.exists()) {
+        setStats(snap.data() as UserStats);
+      }
+    } catch (error) {
+      console.log("ERROR CARGANDO PROGRESO:", error);
+    }
+  }
+
+  const sessions = stats.sessions || 0;
+  const totalTime = stats.totalTime || 0;
+  const level = stats.level || 1;
+
+  const sessionsForNextLevel = 5;
+  const progressInLevel = sessions % sessionsForNextLevel;
+  const progressPercent = Math.round((progressInLevel / sessionsForNextLevel) * 100);
+
+  const hours = Math.floor(totalTime / 60);
+  const minutes = totalTime % 60;
+
   return (
     <ImageBackground
       source={require("../assets/images/ring-bg.png")}
-      style={styles.container}
+      style={styles.bg}
       resizeMode="cover"
+      imageStyle={{ opacity: 0.65 }}
     >
-      <Text style={styles.title}>Progreso</Text>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.topBar}>
+          <Pressable onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={26} color="white" />
+          </Pressable>
 
-      <View style={styles.levelContainer}>
-        <View style={styles.circle}>
-          <Text style={styles.levelText}>Nivel 5</Text>
-          <Text style={styles.percentText}>75% completado</Text>
-        </View>
-      </View>
+          <Text style={styles.title}>Progreso</Text>
 
-      <View style={styles.statsRow}>
-        <View style={styles.statCardBlue}>
-          <Ionicons name="time-outline" size={28} color="#4da6ff" />
-          <Text style={styles.statLabel}>Tiempo total</Text>
-          <Text style={styles.statValue}>12h 34m</Text>
+          <View style={{ width: 26 }} />
         </View>
 
-        <View style={styles.statCardBlue}>
-          <Ionicons name="checkmark-done-outline" size={28} color="#4da6ff" />
-          <Text style={styles.statLabel}>Sesiones</Text>
-          <Text style={styles.statValue}>28</Text>
+        <View style={styles.levelCard}>
+          <View style={styles.circle}>
+            <Text style={styles.levelText}>Nivel {level}</Text>
+            <Text style={styles.percentText}>{progressPercent}%</Text>
+          </View>
+
+          <Text style={styles.levelInfo}>
+            {progressInLevel} de {sessionsForNextLevel} sesiones para el siguiente nivel
+          </Text>
+
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+          </View>
         </View>
 
-        <View style={styles.statCardOrange}>
-          <Ionicons name="trending-up-outline" size={28} color="#ff9f43" />
-          <Text style={styles.statLabel}>Mejora</Text>
-          <Text style={styles.statValueOrange}>+15%</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statCardBlue}>
+            <Ionicons name="checkmark-done-outline" size={28} color="#4DA3FF" />
+            <Text style={styles.statValue}>{sessions}</Text>
+            <Text style={styles.statLabel}>Sesiones</Text>
+          </View>
+
+          <View style={styles.statCardOrange}>
+            <Ionicons name="time-outline" size={28} color="#FF7A00" />
+            <Text style={styles.statValue}>
+              {hours}h {minutes}m
+            </Text>
+            <Text style={styles.statLabel}>Tiempo</Text>
+          </View>
+
+          <View style={styles.statCardBlue}>
+            <Ionicons name="trophy-outline" size={28} color="#4DA3FF" />
+            <Text style={styles.statValue}>{level}</Text>
+            <Text style={styles.statLabel}>Nivel</Text>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.trendBox}>
-        <Text style={styles.trendTitle}>Tendencia</Text>
-        <View style={styles.fakeChart} />
-        <Text style={styles.trendLabels}>Semana 1   Semana 2   Semana 3   Semana 4</Text>
-      </View>
+        <View style={styles.lastCard}>
+          <View style={styles.lastHeader}>
+            <Ionicons name="flame-outline" size={24} color="#FF7A00" />
+            <Text style={styles.lastTitle}>Último entrenamiento</Text>
+          </View>
 
-      <View style={styles.buttons}>
-        <Pressable style={styles.btnBlue}>
-          <Text style={styles.btnText}>Compartir</Text>
-        </Pressable>
+          {stats.lastWorkoutTitle ? (
+            <>
+              <Text style={styles.lastWorkout}>{stats.lastWorkoutTitle}</Text>
+              <Text style={styles.lastInfo}>
+                {stats.lastWorkoutRounds || 0} rondas · {stats.lastWorkoutMinutes || 0} min
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.emptyText}>
+              Aún no has completado ningún entrenamiento.
+            </Text>
+          )}
+        </View>
 
         <Pressable
-          style={styles.btnOrange}
-          onPress={() => router.push("/train")}
+          style={styles.trainBtn}
+          onPress={() => router.push({ pathname: "/(tabs)/train" } as any)}
         >
-          <Text style={styles.btnText}>Nueva sesión</Text>
+          <Ionicons name="play" size={20} color="white" />
+          <Text style={styles.trainBtnText}>Nueva sesión</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  bg: {
     flex: 1,
-    padding: 20,
+    backgroundColor: "#070A0F",
   },
+
+  container: {
+    padding: 20,
+    paddingTop: 54,
+    paddingBottom: 32,
+  },
+
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
+  },
+
   title: {
     color: "white",
-    fontSize: 32,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginTop: 40,
-    marginBottom: 30,
+    fontSize: 26,
+    fontWeight: "900",
   },
-  levelContainer: {
+
+  levelCard: {
+    backgroundColor: "rgba(0,0,0,0.7)",
+    borderRadius: 24,
+    padding: 22,
     alignItems: "center",
-    marginBottom: 30,
+    borderWidth: 2,
+    borderColor: "rgba(255,122,0,0.45)",
+    marginBottom: 22,
   },
+
   circle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     borderWidth: 8,
-    borderColor: "#4da6ff",
+    borderColor: "#4DA3FF",
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 16,
   },
+
   levelText: {
     color: "white",
-    fontSize: 22,
-    fontWeight: "bold",
+    fontSize: 24,
+    fontWeight: "900",
   },
+
   percentText: {
-    color: "#aaa",
+    color: "#FF7A00",
+    fontSize: 18,
+    fontWeight: "800",
     marginTop: 4,
   },
+
+  levelInfo: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: "center",
+  },
+
+  progressBar: {
+    width: "100%",
+    height: 12,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    overflow: "hidden",
+  },
+
+  progressFill: {
+    height: "100%",
+    borderRadius: 10,
+    backgroundColor: "#FF7A00",
+  },
+
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 30,
+    marginBottom: 22,
   },
+
   statCardBlue: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    marginHorizontal: 4,
-    padding: 12,
-    borderRadius: 14,
+    width: "31%",
+    backgroundColor: "rgba(0,0,0,0.65)",
+    padding: 14,
+    borderRadius: 18,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#4da6ff",
+    borderWidth: 1.5,
+    borderColor: "rgba(77,163,255,0.45)",
   },
+
   statCardOrange: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    marginHorizontal: 4,
-    padding: 12,
-    borderRadius: 14,
+    width: "31%",
+    backgroundColor: "rgba(0,0,0,0.65)",
+    padding: 14,
+    borderRadius: 18,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ff9f43",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,122,0,0.45)",
   },
-  statLabel: {
-    color: "#aaa",
-    marginTop: 6,
-  },
+
   statValue: {
     color: "white",
     fontSize: 18,
-    fontWeight: "bold",
-  },
-  statValueOrange: {
-    color: "#ff9f43",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  trendBox: {
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 30,
-  },
-  trendTitle: {
-    color: "white",
-    fontSize: 18,
-    marginBottom: 12,
-  },
-  fakeChart: {
-    height: 100,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  trendLabels: {
-    color: "#aaa",
-    fontSize: 12,
+    fontWeight: "900",
+    marginTop: 8,
     textAlign: "center",
   },
-  buttons: {
+
+  statLabel: {
+    color: "rgba(255,255,255,0.68)",
+    fontSize: 12,
+    marginTop: 4,
+  },
+
+  lastCard: {
+    backgroundColor: "rgba(0,0,0,0.68)",
+    borderRadius: 22,
+    padding: 20,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.12)",
+    marginBottom: 22,
+  },
+
+  lastHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  btnBlue: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#4da6ff",
-    borderRadius: 30,
-    padding: 14,
     alignItems: "center",
-    marginRight: 10,
+    marginBottom: 12,
   },
-  btnOrange: {
-    flex: 1,
-    backgroundColor: "#ff9f43",
-    borderRadius: 30,
-    padding: 14,
-    alignItems: "center",
-    marginLeft: 10,
-  },
-  btnText: {
+
+  lastTitle: {
     color: "white",
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "900",
+    marginLeft: 8,
+  },
+
+  lastWorkout: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "900",
+    marginBottom: 6,
+  },
+
+  lastInfo: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 14,
+  },
+
+  emptyText: {
+    color: "rgba(255,255,255,0.72)",
+    lineHeight: 20,
+  },
+
+  trainBtn: {
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: "#FF7A00",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+
+  trainBtnText: {
+    color: "white",
+    fontSize: 17,
+    fontWeight: "900",
   },
 });
-
