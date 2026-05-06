@@ -6,30 +6,48 @@ import {
   ImageBackground,
   Pressable,
   Platform,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { auth, db } from "../firebaseConfig";
+import { collection, getDocs, doc, setDoc } from "firebase/firestore";
 
 type Level = "Principiante" | "Intermedio" | "Avanzado";
 type Goal = "Resistencia" | "Técnica" | "Fuerza";
 
+type Workout = {
+  id: string;
+  title: string;
+  description?: string;
+  level: string;
+  estimatedMinutes: number;
+  createdBy?: string;
+  rounds?: any[];
+};
+
 const LEVELS: Level[] = ["Principiante", "Intermedio", "Avanzado"];
-const GOALS: Goal[] = ["Resistencia", "Técnica", "Fuerza"];
+
+function normalizeLevel(level: Level) {
+  if (level === "Principiante") return "basico";
+  if (level === "Intermedio") return "intermedio";
+  return "experto";
+}
 
 export default function GenerateScreen() {
   const [level, setLevel] = useState<Level>("Principiante");
   const [openLevel, setOpenLevel] = useState(false);
-
   const [goal, setGoal] = useState<Goal>("Resistencia");
-
   const [days, setDays] = useState(3);
-  const [duration, setDuration] = useState(45); // min
+  const [duration, setDuration] = useState(45);
+  const [generating, setGenerating] = useState(false);
 
   const durationLabel = useMemo(() => `${duration} min`, [duration]);
 
   function incDays() {
     setDays((d) => Math.min(7, d + 1));
   }
+
   function decDays() {
     setDays((d) => Math.max(1, d - 1));
   }
@@ -40,9 +58,75 @@ export default function GenerateScreen() {
     setDuration(options[(idx + 1) % options.length]);
   }
 
-  function onGenerate() {
-    
-    router.push({ pathname: "/plan" } as any);
+  async function onGenerate() {
+    try {
+      const user = auth.currentUser;
+
+      if (!user) {
+        Alert.alert("Error", "Debes iniciar sesión.");
+        return;
+      }
+
+      setGenerating(true);
+
+      const snap = await getDocs(collection(db, "workouts"));
+
+      const allWorkouts: Workout[] = snap.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...(docSnap.data() as Omit<Workout, "id">),
+      }));
+
+      const selectedLevel = normalizeLevel(level);
+
+      let matchingWorkouts = allWorkouts.filter(
+        (w) =>
+          w.level === selectedLevel &&
+          w.estimatedMinutes <= duration
+      );
+
+      if (matchingWorkouts.length === 0) {
+        matchingWorkouts = allWorkouts.filter((w) => w.level === selectedLevel);
+      }
+
+      if (matchingWorkouts.length === 0) {
+        matchingWorkouts = allWorkouts;
+      }
+
+      if (matchingWorkouts.length === 0) {
+        Alert.alert("Error", "No hay entrenamientos disponibles.");
+        return;
+      }
+
+      const planWorkouts = Array.from({ length: days }).map((_, index) => {
+        const workout = matchingWorkouts[index % matchingWorkouts.length];
+
+        return {
+          day: index + 1,
+          workoutId: workout.id,
+          title: workout.title,
+          description: workout.description || "",
+          level: workout.level,
+          estimatedMinutes: workout.estimatedMinutes,
+          roundsCount: workout.rounds?.length || 0,
+        };
+      });
+
+      await setDoc(doc(db, "users", user.uid, "plans", "generated"), {
+        goal,
+        level: selectedLevel,
+        days,
+        duration,
+        workouts: planWorkouts,
+        generatedAt: new Date().toISOString(),
+      });
+
+      router.push({ pathname: "/plan" } as any);
+    } catch (error) {
+      console.log("ERROR GENERANDO PLAN:", error);
+      Alert.alert("Error", "No se pudo generar el plan.");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   return (
@@ -60,7 +144,7 @@ export default function GenerateScreen() {
           <Text style={styles.brandText}>
             <Text style={{ color: "#2E8BFF", fontWeight: "800" }}>Shado</Text>
             <Text style={{ color: "#FF7A00", fontWeight: "800" }}>wBox</Text>
-            <Text style={styles.brandSub}>  Boxing Training</Text>
+            <Text style={styles.brandSub}> Boxing Training</Text>
           </Text>
         </View>
 
@@ -96,6 +180,7 @@ export default function GenerateScreen() {
         )}
 
         <Text style={[styles.label, { marginTop: 16 }]}>Objetivo</Text>
+
         <View style={styles.chipsRow}>
           <Chip
             text="Resistencia"
@@ -118,33 +203,37 @@ export default function GenerateScreen() {
         </View>
 
         <Text style={[styles.label, { marginTop: 16 }]}>Días por semana</Text>
-        <View style={styles.controlCard}>
-          <Text style={styles.controlValue}>{days}</Text>
 
+        <View style={styles.controlCard}>
           <Pressable style={styles.iconBtn} onPress={decDays}>
             <Ionicons name="remove" size={18} color="#2E8BFF" />
           </Pressable>
 
-          <Text style={[styles.controlValue, { width: 28, textAlign: "center" }]}>{days}</Text>
+          <Text style={styles.controlValue}>{days}</Text>
 
           <Pressable style={styles.iconBtn} onPress={incDays}>
             <Ionicons name="add" size={18} color="#2E8BFF" />
           </Pressable>
 
-          <View style={{ width: 8 }} />
-
           <Ionicons name="calendar-outline" size={20} color="#2E8BFF" />
         </View>
 
-        <Text style={[styles.label, { marginTop: 16 }]}>Duración del entrenamiento</Text>
+        <Text style={[styles.label, { marginTop: 16 }]}>Duración máxima por sesión</Text>
+
         <Pressable style={styles.controlCard} onPress={cycleDuration}>
           <Text style={styles.controlValue}>{durationLabel}</Text>
           <Ionicons name="time-outline" size={20} color="#2E8BFF" />
         </Pressable>
 
-        <Pressable style={styles.generateBtn} onPress={onGenerate}>
+        <Pressable
+          style={[styles.generateBtn, generating && { opacity: 0.7 }]}
+          onPress={onGenerate}
+          disabled={generating}
+        >
           <Ionicons name="hand-left" size={18} color="#FFFFFF" />
-          <Text style={styles.generateText}>Generar plan</Text>
+          <Text style={styles.generateText}>
+            {generating ? "Generando..." : "Generar plan"}
+          </Text>
         </Pressable>
 
         <Pressable style={styles.backLink} onPress={() => router.back()}>
@@ -167,17 +256,9 @@ function Chip({
   onPress: () => void;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.chip, active ? styles.chipActive : null]}
-    >
-      <Ionicons
-        name={icon}
-        size={16}
-        color={active ? "#FF7A00" : "#FF7A00"}
-        style={{ marginRight: 8 }}
-      />
-      <Text style={[styles.chipText, active ? styles.chipTextActive : null]}>{text}</Text>
+    <Pressable onPress={onPress} style={[styles.chip, active && styles.chipActive]}>
+      <Ionicons name={icon} size={16} color="#FF7A00" style={{ marginRight: 8 }} />
+      <Text style={styles.chipText}>{text}</Text>
     </Pressable>
   );
 }
@@ -253,10 +334,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.35)",
   },
   chipActive: {
-    backgroundColor: "rgba(255,122,0,0.10)",
+    backgroundColor: "rgba(255,122,0,0.20)",
   },
   chipText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-  chipTextActive: { color: "#FFFFFF" },
 
   controlCard: {
     height: 54,
@@ -269,7 +349,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  controlValue: { color: "#FFFFFF", fontSize: 18, fontWeight: "800" },
+  controlValue: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
 
   iconBtn: {
     width: 34,
@@ -289,7 +369,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: "row",
     gap: 10,
-
     shadowColor: "#FF7A00",
     shadowOpacity: Platform.OS === "android" ? 0.35 : 0.4,
     shadowRadius: 16,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -6,12 +6,67 @@ import {
   ImageBackground,
   Pressable,
   ScrollView,
-  Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import { auth, db } from "../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+
+type PlanWorkout = {
+  day: number;
+  workoutId: string;
+  title: string;
+  description?: string;
+  level: string;
+  estimatedMinutes: number;
+  roundsCount: number;
+};
+
+type GeneratedPlan = {
+  goal: string;
+  level: string;
+  days: number;
+  duration: number;
+  workouts: PlanWorkout[];
+};
 
 export default function PlanScreen() {
+  const [plan, setPlan] = useState<GeneratedPlan | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadPlan();
+    }, [])
+  );
+
+  async function loadPlan() {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const ref = doc(db, "users", user.uid, "plans", "generated");
+      const snap = await getDoc(ref);
+
+      if (snap.exists()) {
+        setPlan(snap.data() as GeneratedPlan);
+      }
+    } catch (error) {
+      console.log("ERROR CARGANDO PLAN:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function openWorkout(workoutId: string) {
+    router.push({
+      pathname: "/workout-detail",
+      params: { workoutId },
+    } as any);
+  }
+
   return (
     <ImageBackground
       source={require("../assets/images/ring-bg.png")}
@@ -20,210 +75,173 @@ export default function PlanScreen() {
       imageStyle={{ opacity: 0.65 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.sbIcon}>
-            <Text style={styles.sbText}>SB</Text>
-          </View>
-          <View>
-            <Text style={styles.headerTitle}>Plan de Entrenamiento</Text>
-            <Text style={styles.headerTitle}>Semanal</Text>
-          </View>
+        <View style={styles.topBar}>
+          <Pressable onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={26} color="white" />
+          </Pressable>
+
+          <Text style={styles.title}>Plan generado</Text>
+
+          <View style={{ width: 26 }} />
         </View>
 
-        <View style={styles.progressRow}>
-          <View style={styles.progressBar}>
-            <View style={styles.progressFill} />
+        {loading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="large" color="#FF7A00" />
+            <Text style={styles.loadingText}>Cargando plan...</Text>
           </View>
-          <Text style={styles.weekText}>Semana 1 de 4</Text>
-        </View>
+        ) : !plan ? (
+          <View style={styles.emptyCard}>
+            <Ionicons name="navigate-outline" size={34} color="#FF7A00" />
+            <Text style={styles.emptyTitle}>No hay plan generado</Text>
+            <Text style={styles.emptyText}>
+              Genera un plan desde la pantalla anterior para verlo aquí.
+            </Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.heroCard}>
+              <Text style={styles.heroSmall}>Objetivo</Text>
+              <Text style={styles.heroTitle}>{plan.goal}</Text>
+              <Text style={styles.heroText}>
+                {plan.days} días por semana · {plan.duration} min máximo · Nivel {plan.level}
+              </Text>
+            </View>
 
-        
-        <PlanCard
-          title="Shadowboxing"
-          duration="10 minutos"
-          description="Enfoque en movimiento y técnica sin oponente."
-          icon="hand-left"
-          color="#FF7A00"
-        />
+            {plan.workouts.map((workout) => (
+              <Pressable
+                key={`${workout.day}-${workout.workoutId}`}
+                style={styles.card}
+                onPress={() => openWorkout(workout.workoutId)}
+              >
+                <View style={styles.dayCircle}>
+                  <Text style={styles.dayText}>{workout.day}</Text>
+                </View>
 
-        <PlanCard
-          title="Golpes combinados"
-          duration="15 minutos"
-          description="Practica combinaciones de jab, cross y gancho."
-          icon="flash"
-          color="#2E8BFF"
-        />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cardTitle}>Día {workout.day}</Text>
+                  <Text style={styles.workoutTitle}>{workout.title}</Text>
+                  <Text style={styles.cardInfo}>
+                    {workout.roundsCount} rondas · {workout.estimatedMinutes} min · {workout.level}
+                  </Text>
+                </View>
 
-        <PlanCard
-          title="Descanso"
-          duration="5 minutos"
-          description="Recuperación activa. Mantente ligero sobre tus pies."
-          icon="time"
-          color="#2E8BFF"
-        />
-
-        <PlanCard
-          title="Ejercicio de resistencia"
-          duration="15 minutos"
-          description="Fortalecimiento del cuerpo completo para resistencia."
-          icon="walk"
-          color="#FF7A00"
-        />
-
-        <View style={styles.totalRow}>
-          <Ionicons name="time-outline" size={20} color="#FF7A00" />
-          <Text style={styles.totalText}>Duración total: 45 minutos</Text>
-        </View>
-
-        <Pressable style={styles.startBtn}>
-          <Text style={styles.startText}>Iniciar entrenamiento</Text>
-        </Pressable>
-
-        <Pressable style={styles.downloadBtn}>
-          <Text style={styles.downloadText}>Descargar para offline</Text>
-        </Pressable>
-
-        <Pressable style={styles.backLink} onPress={() => router.back()}>
-          <Text style={styles.backText}>Volver</Text>
-        </Pressable>
+                <Ionicons name="chevron-forward" size={24} color="#FF7A00" />
+              </Pressable>
+            ))}
+          </>
+        )}
       </ScrollView>
     </ImageBackground>
   );
 }
 
-function PlanCard({
-  title,
-  duration,
-  description,
-  icon,
-  color,
-}: {
-  title: string;
-  duration: string;
-  description: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-}) {
-  return (
-    <View style={styles.card}>
-      <View style={[styles.cardIconWrap, { borderColor: color }]}>
-        <Ionicons name={icon} size={24} color="#FFFFFF" />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.cardTitle}>{title}</Text>
-        <Text style={styles.cardDuration}>Duración: {duration}</Text>
-        <Text style={styles.cardDesc}>{description}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.6)" />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   bg: { flex: 1, backgroundColor: "#070A0F" },
-  container: { padding: 16, paddingBottom: 30 },
-
-  header: {
+  container: {
+    padding: 20,
+    paddingTop: 54,
+    paddingBottom: 30,
+  },
+  topBar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    marginBottom: 10,
+    justifyContent: "space-between",
+    marginBottom: 22,
   },
-  sbIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#1E2A38",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sbText: { color: "#2E8BFF", fontSize: 20, fontWeight: "900" },
-
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 22,
+  title: {
+    color: "white",
+    fontSize: 24,
     fontWeight: "900",
   },
-
-  progressRow: { marginBottom: 16 },
-  progressBar: {
-    height: 6,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  progressFill: {
-    width: "30%",
-    height: "100%",
-    backgroundColor: "#2E8BFF",
-  },
-  weekText: {
-    marginTop: 6,
-    color: "rgba(255,255,255,0.6)",
-    textAlign: "center",
-  },
-
-  card: {
-    flexDirection: "row",
-    gap: 14,
-    padding: 14,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: "rgba(46,139,255,0.6)",
-    backgroundColor: "rgba(0,0,0,0.45)",
-    marginBottom: 12,
+  loadingWrap: {
+    marginTop: 40,
     alignItems: "center",
   },
-  cardIconWrap: {
-    width: 44,
-    height: 44,
+  loadingText: {
+    color: "white",
+    marginTop: 12,
+    fontWeight: "700",
+  },
+  emptyCard: {
+    backgroundColor: "rgba(0,0,0,0.65)",
     borderRadius: 22,
-    borderWidth: 3,
+    padding: 24,
     alignItems: "center",
-    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,122,0,0.35)",
   },
-  cardTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "800" },
-  cardDuration: {
-    color: "rgba(255,255,255,0.75)",
-    marginTop: 2,
+  emptyTitle: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "900",
+    marginTop: 12,
+    marginBottom: 8,
   },
-  cardDesc: {
+  emptyText: {
+    color: "rgba(255,255,255,0.72)",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  heroCard: {
+    backgroundColor: "rgba(0,0,0,0.72)",
+    borderRadius: 24,
+    padding: 22,
+    borderWidth: 2,
+    borderColor: "rgba(255,122,0,0.45)",
+    marginBottom: 22,
+  },
+  heroSmall: {
     color: "rgba(255,255,255,0.65)",
-    marginTop: 4,
-    fontSize: 13,
+    marginBottom: 6,
   },
-
-  totalRow: {
+  heroTitle: {
+    color: "white",
+    fontSize: 28,
+    fontWeight: "900",
+    marginBottom: 8,
+  },
+  heroText: {
+    color: "rgba(255,255,255,0.75)",
+    lineHeight: 20,
+  },
+  card: {
+    backgroundColor: "rgba(0,0,0,0.65)",
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,122,0,0.35)",
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginVertical: 12,
   },
-  totalText: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
-
-  startBtn: {
-    height: 56,
-    borderRadius: 18,
+  dayCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: "#FF7A00",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
-    shadowColor: "#FF7A00",
-    shadowOpacity: Platform.OS === "android" ? 0.35 : 0.4,
-    shadowRadius: 14,
-    elevation: 8,
+    marginRight: 14,
   },
-  startText: { color: "#FFFFFF", fontSize: 18, fontWeight: "900" },
-
-  downloadBtn: {
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: "#1E4E8C",
-    alignItems: "center",
-    justifyContent: "center",
+  dayText: {
+    color: "white",
+    fontWeight: "900",
+    fontSize: 18,
   },
-  downloadText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
-
-  backLink: { marginTop: 12, alignItems: "center" },
-  backText: { color: "rgba(255,255,255,0.55)", fontWeight: "700" },
+  cardTitle: {
+    color: "#2E8BFF",
+    fontWeight: "900",
+    marginBottom: 4,
+  },
+  workoutTitle: {
+    color: "white",
+    fontSize: 17,
+    fontWeight: "900",
+    marginBottom: 5,
+  },
+  cardInfo: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
+  },
 });
