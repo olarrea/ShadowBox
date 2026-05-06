@@ -92,6 +92,14 @@ export default function HomeScreen() {
       </Pressable>
 
       <Pressable
+        style={styles.generateButton}
+        onPress={() => router.push({ pathname: "/generate" } as any)}
+      >
+        <Ionicons name="navigate-outline" size={22} color="#FFFFFF" />
+        <Text style={styles.generateButtonText}>Generar plan</Text>
+      </Pressable>
+
+      <Pressable
         style={styles.progressButton}
         onPress={() => router.push({ pathname: "/progress" } as any)}
       >
@@ -160,7 +168,7 @@ const styles = StyleSheet.create({
     padding: 22,
     borderWidth: 1.5,
     borderColor: "rgba(46,139,255,0.4)",
-    marginBottom: 24,
+    marginBottom: 20,
   },
 
   infoTitle: {
@@ -185,12 +193,48 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    marginBottom: 24,
+    marginBottom: 12,
   },
 
   createButtonText: {
     color: "#FFFFFF",
     fontSize: 18,
+    fontWeight: "900",
+  },
+
+  generateButton: {
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,122,0,0.32)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,122,0,0.65)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 12,
+  },
+
+  generateButtonText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "900",
+  },
+
+  progressButton: {
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: "rgba(46,139,255,0.85)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 24,
+  },
+
+  progressButtonText: {
+    color: "#FFFFFF",
+    fontSize: 17,
     fontWeight: "900",
   },
 
@@ -212,22 +256,5 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     flex: 1,
     lineHeight: 22,
-  },
-
-  progressButton: {
-  height: 56,
-  borderRadius: 18,
-  backgroundColor: "rgba(46,139,255,0.85)",
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 10,
-  marginBottom: 24,
-  },
-
-  progressButtonText: {
-  color: "#FFFFFF",
-  fontSize: 17,
-  fontWeight: "900",
   },
 });
