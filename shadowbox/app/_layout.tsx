@@ -20,7 +20,7 @@ export default function RootLayout() {
         <Stack.Screen name="my-workouts" />
         <Stack.Screen name="create-workout" />
         <Stack.Screen name="notifications-settings" />
-        <Stack.Screen name="theme-settings" />
+        <Stack.Screen name="settings" />
       </Stack>
     </ThemeProvider>
   );

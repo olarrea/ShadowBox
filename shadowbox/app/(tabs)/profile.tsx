@@ -117,7 +117,10 @@ export default function ProfileScreen() {
           <Text style={styles.optionText}>Editar perfil</Text>
         </Pressable>
 
-        <Pressable style={styles.option}>
+        <Pressable
+          style={styles.option}
+          onPress={() => router.push({ pathname: "/settings" } as any)}
+        >
           <Ionicons name="settings-outline" size={20} color="white" />
           <Text style={styles.optionText}>Configuración</Text>
         </Pressable>

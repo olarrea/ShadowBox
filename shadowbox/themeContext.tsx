@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { auth, db } from "./firebaseConfig";
 
 type ThemeMode = "dark" | "light";
 
@@ -21,12 +23,52 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const isDark = theme === "dark";
 
-  function toggleTheme() {
-    setThemeState((current) => (current === "dark" ? "light" : "dark"));
+  useEffect(() => {
+    loadTheme();
+  }, []);
+
+  async function loadTheme() {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+
+      if (snap.exists()) {
+        const data = snap.data();
+
+        if (data.theme === "light" || data.theme === "dark") {
+          setThemeState(data.theme);
+        }
+      }
+    } catch (error) {
+      console.log("ERROR CARGANDO TEMA:", error);
+    }
+  }
+
+  async function saveTheme(value: ThemeMode) {
+    try {
+      const user = auth.currentUser;
+
+      if (user) {
+        await updateDoc(doc(db, "users", user.uid), {
+          theme: value,
+        });
+      }
+    } catch (error) {
+      console.log("ERROR GUARDANDO TEMA:", error);
+    }
   }
 
   function setTheme(value: ThemeMode) {
     setThemeState(value);
+    saveTheme(value);
+  }
+
+  function toggleTheme() {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
   }
 
   return (
