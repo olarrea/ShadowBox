@@ -17,10 +17,15 @@ type OfflineWorkout = {
   id: string;
   title: string;
   description?: string;
-  level: string;
+  level?: string;
   estimatedMinutes: number;
   rounds?: any[];
 };
+
+function formatLevel(level?: string) {
+  if (!level) return "Básico";
+  return level.charAt(0).toUpperCase() + level.slice(1);
+}
 
 export default function OfflineWorkoutsScreen() {
   const [downloads, setDownloads] = useState<OfflineWorkout[]>([]);
@@ -36,7 +41,7 @@ export default function OfflineWorkoutsScreen() {
     try {
       setLoading(true);
       const data = getOfflineWorkouts();
-      setDownloads(data);
+      setDownloads(data as OfflineWorkout[]);
     } catch (error) {
       console.log("ERROR CARGANDO DESCARGADOS SQLITE:", error);
       setDownloads([]);
@@ -98,8 +103,7 @@ export default function OfflineWorkoutsScreen() {
                   {(workout.rounds?.length || 0) > 0
                     ? `${workout.rounds?.length} rondas`
                     : "Rondas por definir"}{" "}
-                  · {workout.estimatedMinutes} min ·{" "}
-                  {workout.level.charAt(0).toUpperCase() + workout.level.slice(1)}
+                  · {workout.estimatedMinutes} min · {formatLevel(workout.level)}
                 </Text>
               </View>
 
