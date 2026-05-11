@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Audio } from "expo-av";
 import { auth, db } from "../firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { router, useLocalSearchParams } from "expo-router";
@@ -68,6 +69,19 @@ export default function TrainScreen() {
   const [totalSecondsUsed, setTotalSecondsUsed] = useState(0);
   const [saving, setSaving] = useState(false);
 
+  const startSoundRef = useRef<Audio.Sound | null>(null);
+  const endSoundRef = useRef<Audio.Sound | null>(null);
+  const hasPlayedInitialSound = useRef(false);
+  const hasHandledRoundEnd = useRef(false);
+
+  useEffect(() => {
+    loadSounds();
+
+    return () => {
+      unloadSounds();
+    };
+  }, []);
+
   useEffect(() => {
     if (workoutId) {
       loadWorkout();
@@ -84,6 +98,66 @@ export default function TrainScreen() {
       setLoading(false);
     }
   }, [workoutId]);
+
+  useEffect(() => {
+    if (!loading && !hasPlayedInitialSound.current) {
+      hasPlayedInitialSound.current = true;
+      playStartSound();
+    }
+  }, [loading]);
+
+  async function loadSounds() {
+    try {
+      const start = await Audio.Sound.createAsync(
+        require("../assets/sounds/start.mp3")
+      );
+
+      const end = await Audio.Sound.createAsync(
+        require("../assets/sounds/end.mp3")
+      );
+
+      startSoundRef.current = start.sound;
+      endSoundRef.current = end.sound;
+    } catch (error) {
+      console.log("ERROR CARGANDO SONIDOS:", error);
+    }
+  }
+
+  async function unloadSounds() {
+    try {
+      if (startSoundRef.current) {
+        await startSoundRef.current.unloadAsync();
+      }
+
+      if (endSoundRef.current) {
+        await endSoundRef.current.unloadAsync();
+      }
+    } catch (error) {
+      console.log("ERROR DESCARGANDO SONIDOS:", error);
+    }
+  }
+
+  async function playStartSound() {
+    try {
+      if (!startSoundRef.current) return;
+
+      await startSoundRef.current.setPositionAsync(0);
+      await startSoundRef.current.playAsync();
+    } catch (error) {
+      console.log("ERROR PLAY START SOUND:", error);
+    }
+  }
+
+  async function playEndSound() {
+    try {
+      if (!endSoundRef.current) return;
+
+      await endSoundRef.current.setPositionAsync(0);
+      await endSoundRef.current.playAsync();
+    } catch (error) {
+      console.log("ERROR PLAY END SOUND:", error);
+    }
+  }
 
   async function loadWorkout() {
     try {
@@ -143,8 +217,11 @@ export default function TrainScreen() {
   }, [loading, isRunning, currentRoundIndex, currentRound]);
 
   useEffect(() => {
-    if (!loading && secondsLeft === 0) {
+    if (!loading && secondsLeft === 0 && !hasHandledRoundEnd.current) {
+      hasHandledRoundEnd.current = true;
+      playEndSound();
       setIsRunning(false);
+
       Alert.alert(
         "Ronda terminada",
         currentRoundIndex < rounds.length - 1
@@ -152,7 +229,7 @@ export default function TrainScreen() {
           : "Has terminado la última ronda. Pulsa 'Finalizar'."
       );
     }
-  }, [secondsLeft, loading]);
+  }, [secondsLeft, loading, currentRoundIndex, rounds.length]);
 
   const mmss = useMemo(() => formatMMSS(secondsLeft), [secondsLeft]);
   const [mm, ss] = useMemo(() => mmss.split(":"), [mmss]);
@@ -175,9 +252,12 @@ export default function TrainScreen() {
     }
 
     const nextIndex = currentRoundIndex + 1;
+
+    hasHandledRoundEnd.current = false;
     setCurrentRoundIndex(nextIndex);
     setSecondsLeft(rounds[nextIndex].duration);
     setIsRunning(true);
+    playStartSound();
   }
 
   async function finish() {
@@ -213,7 +293,6 @@ export default function TrainScreen() {
         totalTime: newTotalTime,
         level: newLevel,
 
-        // último entrenamiento realizado
         lastWorkoutId: String(workoutId || ""),
         lastWorkoutTitle: workout?.title || "Entrenamiento",
         lastWorkoutMinutes: workout?.estimatedMinutes || sessionMinutes,
