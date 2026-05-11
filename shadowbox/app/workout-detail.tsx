@@ -21,6 +21,12 @@ import {
 } from "firebase/firestore";
 import { router, useLocalSearchParams } from "expo-router";
 
+import {
+  saveOfflineWorkout,
+  deleteOfflineWorkout,
+  isWorkoutDownloaded,
+} from "../database";
+
 type WorkoutRound = {
   title: string;
   description: string;
@@ -179,24 +185,13 @@ export default function WorkoutDetailScreen() {
   }
 
   async function checkDownloaded() {
-    try {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const downloadRef = doc(
-        db,
-        "users",
-        user.uid,
-        "downloads",
-        String(workoutId)
-      );
-      const downloadSnap = await getDoc(downloadRef);
-
-      setDownloaded(downloadSnap.exists());
-    } catch (error) {
-      console.log("ERROR REVISANDO DESCARGA:", error);
-    }
+  try {
+    const localDownloaded = isWorkoutDownloaded(String(workoutId));
+    setDownloaded(localDownloaded);
+  } catch (error) {
+    console.log("ERROR REVISANDO DESCARGA LOCAL:", error);
   }
+}
 
   async function toggleFavorite() {
     try {
@@ -236,47 +231,59 @@ export default function WorkoutDetailScreen() {
   }
 
   async function toggleDownload() {
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        Alert.alert("Error", "Debes iniciar sesión.");
-        return;
-      }
-
-      if (!workout) return;
-
-      setDownloadLoading(true);
-
-      const downloadRef = doc(
-        db,
-        "users",
-        user.uid,
-        "downloads",
-        String(workoutId)
-      );
-
-      if (downloaded) {
-        await deleteDoc(downloadRef);
-        setDownloaded(false);
-      } else {
-        await setDoc(downloadRef, {
-          title: workout.title,
-          description: workout.description,
-          level: workout.level,
-          estimatedMinutes: workout.estimatedMinutes,
-          createdBy: workout.createdBy || "system",
-          rounds: workout.rounds || [],
-          downloadedAt: new Date().toISOString(),
-        });
-        setDownloaded(true);
-      }
-    } catch (error) {
-      console.log("ERROR TOGGLE DOWNLOAD:", error);
-      Alert.alert("Error", "No se pudo actualizar la descarga.");
-    } finally {
-      setDownloadLoading(false);
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert("Error", "Debes iniciar sesión.");
+      return;
     }
+
+    if (!workout) return;
+
+    setDownloadLoading(true);
+
+    const downloadRef = doc(
+      db,
+      "users",
+      user.uid,
+      "downloads",
+      String(workoutId)
+    );
+
+    if (downloaded) {
+      deleteOfflineWorkout(String(workoutId));
+      await deleteDoc(downloadRef);
+      setDownloaded(false);
+    } else {
+      saveOfflineWorkout(String(workoutId), {
+        id: String(workoutId),
+        title: workout.title,
+        description: workout.description,
+        level: workout.level,
+        estimatedMinutes: workout.estimatedMinutes,
+        createdBy: workout.createdBy || "system",
+        rounds: workout.rounds || [],
+      });
+
+      await setDoc(downloadRef, {
+        title: workout.title,
+        description: workout.description,
+        level: workout.level,
+        estimatedMinutes: workout.estimatedMinutes,
+        createdBy: workout.createdBy || "system",
+        rounds: workout.rounds || [],
+        downloadedAt: new Date().toISOString(),
+      });
+
+      setDownloaded(true);
+    }
+  } catch (error) {
+    console.log("ERROR TOGGLE DOWNLOAD:", error);
+    Alert.alert("Error", "No se pudo actualizar la descarga.");
+  } finally {
+    setDownloadLoading(false);
   }
+}
 
   if (loading) {
     return (
