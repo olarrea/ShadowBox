@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -10,8 +10,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { auth, db } from "../firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { useFocusEffect } from "@react-navigation/native";
+import { getOfflineWorkouts } from "../database";
 
 type OfflineWorkout = {
   id: string;
@@ -26,29 +26,20 @@ export default function OfflineWorkoutsScreen() {
   const [downloads, setDownloads] = useState<OfflineWorkout[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadDownloads();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadDownloads();
+    }, [])
+  );
 
-  async function loadDownloads() {
+  function loadDownloads() {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        setDownloads([]);
-        return;
-      }
-
-      const downloadsRef = collection(db, "users", user.uid, "downloads");
-      const snapshot = await getDocs(downloadsRef);
-
-      const data: OfflineWorkout[] = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...(docSnap.data() as Omit<OfflineWorkout, "id">),
-      }));
-
+      setLoading(true);
+      const data = getOfflineWorkouts();
       setDownloads(data);
     } catch (error) {
-      console.log("ERROR CARGANDO DESCARGADOS:", error);
+      console.log("ERROR CARGANDO DESCARGADOS SQLITE:", error);
+      setDownloads([]);
     } finally {
       setLoading(false);
     }
@@ -87,9 +78,11 @@ export default function OfflineWorkoutsScreen() {
         ) : downloads.length === 0 ? (
           <View style={styles.emptyCard}>
             <Ionicons name="download-outline" size={34} color="#2E8BFF" />
-            <Text style={styles.emptyTitle}>Aún no has descargado entrenamientos</Text>
+            <Text style={styles.emptyTitle}>
+              Aún no has descargado entrenamientos
+            </Text>
             <Text style={styles.emptyText}>
-              Descárgalos desde el detalle para verlos aquí.
+              Descárgalos desde el detalle para entrenar sin conexión.
             </Text>
           </View>
         ) : (
