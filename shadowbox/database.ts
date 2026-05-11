@@ -27,7 +27,10 @@ export function initDatabase() {
   `);
 }
 
-export function saveOfflineWorkout(workoutId: string, workout: OfflineWorkout) {
+export function saveOfflineWorkout(
+  workoutId: string,
+  workout: OfflineWorkout
+) {
   initDatabase();
 
   const roundsJson = JSON.stringify(workout.rounds || []);
@@ -77,6 +80,30 @@ export function getOfflineWorkouts(): OfflineWorkout[] {
     createdBy: row.createdBy,
     rounds: row.rounds ? JSON.parse(row.rounds) : [],
   }));
+}
+
+export function getOfflineWorkoutById(workoutId: string) {
+  initDatabase();
+
+  const row = db.getFirstSync<any>(
+    `
+      SELECT * FROM offline_workouts
+      WHERE id = ?;
+    `,
+    [workoutId]
+  );
+
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    level: row.level,
+    estimatedMinutes: row.estimatedMinutes,
+    createdBy: row.createdBy,
+    rounds: row.rounds ? JSON.parse(row.rounds) : [],
+  };
 }
 
 export function isWorkoutDownloaded(workoutId: string) {

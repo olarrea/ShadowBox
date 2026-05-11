@@ -25,6 +25,7 @@ import {
   saveOfflineWorkout,
   deleteOfflineWorkout,
   isWorkoutDownloaded,
+  getOfflineWorkoutById,
 } from "../database";
 
 type WorkoutRound = {
@@ -80,9 +81,25 @@ export default function WorkoutDetailScreen() {
 
       if (snap.exists()) {
         setWorkout(snap.data() as Workout);
+        return;
       }
+
+      throw new Error("Entrenamiento no encontrado en Firebase");
     } catch (error) {
-      console.log("ERROR CARGANDO WORKOUT DETAIL:", error);
+      console.log("Firebase no disponible, intentando cargar desde SQLite:", error);
+
+      try {
+        const offlineWorkout = getOfflineWorkoutById(String(workoutId));
+
+        if (offlineWorkout) {
+          setWorkout(offlineWorkout as Workout);
+        } else {
+          setWorkout(null);
+        }
+      } catch (sqliteError) {
+        console.log("ERROR CARGANDO WORKOUT DESDE SQLITE:", sqliteError);
+        setWorkout(null);
+      }
     } finally {
       setLoading(false);
     }
