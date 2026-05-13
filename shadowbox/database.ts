@@ -41,7 +41,7 @@ export function saveOfflineWorkout(
       (id, title, description, level, estimatedMinutes, createdBy, rounds, downloadedAt)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?);
     `,
-    [
+    [   
       workoutId,
       workout.title,
       workout.description || "",

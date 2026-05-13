@@ -14,6 +14,7 @@ import { Audio } from "expo-av";
 import { auth, db } from "../firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { router, useLocalSearchParams } from "expo-router";
+import { getCompletedChallenges } from "../utils/challenges";
 
 type WorkoutRound = {
   title: string;
@@ -54,6 +55,15 @@ function formatMMSS(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return `${pad2(m)}:${pad2(s)}`;
+}
+
+function calculateUserLevel(
+  sessions: number,
+  totalTime: number,
+  completedChallengesCount: number
+) {
+  const points = sessions * 20 + totalTime * 0.5 + completedChallengesCount * 30;
+  return Math.floor(points / 100) + 1;
 }
 
 export default function TrainScreen() {
@@ -280,18 +290,40 @@ export default function TrainScreen() {
       }
 
       const currentData = userSnap.data();
+
       const currentSessions = currentData.sessions ?? 0;
       const currentTotalTime = currentData.totalTime ?? 0;
+      const previousCompletedChallenges: string[] =
+        currentData.completedChallenges ?? [];
 
       const sessionMinutes = Math.max(1, Math.ceil(totalSecondsUsed / 60));
       const newSessions = currentSessions + 1;
       const newTotalTime = currentTotalTime + sessionMinutes;
-      const newLevel = Math.floor(newSessions / 5) + 1;
+
+      const completedChallengeObjects = getCompletedChallenges(
+        newSessions,
+        newTotalTime
+      );
+
+      const completedChallengeIds = completedChallengeObjects.map(
+        (challenge) => challenge.id
+      );
+
+      const newUnlockedChallenges = completedChallengeIds.filter(
+        (id) => !previousCompletedChallenges.includes(id)
+      );
+
+      const newLevel = calculateUserLevel(
+        newSessions,
+        newTotalTime,
+        completedChallengeIds.length
+      );
 
       await updateDoc(userRef, {
         sessions: newSessions,
         totalTime: newTotalTime,
         level: newLevel,
+        completedChallenges: completedChallengeIds,
 
         lastWorkoutId: String(workoutId || ""),
         lastWorkoutTitle: workout?.title || "Entrenamiento",
@@ -301,9 +333,14 @@ export default function TrainScreen() {
         lastCompletedAt: new Date().toISOString(),
       });
 
+      const unlockedMessage =
+        newUnlockedChallenges.length > 0
+          ? `\n\nHas desbloqueado ${newUnlockedChallenges.length} reto(s) nuevo(s).`
+          : "";
+
       Alert.alert(
         "Entrenamiento guardado",
-        `Has completado 1 sesión y sumado ${sessionMinutes} min.`,
+        `Has completado 1 sesión y sumado ${sessionMinutes} min.${unlockedMessage}`,
         [
           {
             text: "OK",
