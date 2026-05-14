@@ -13,6 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import { CHALLENGES } from "../utils/challenges";
+import { useTheme } from "../themeContext";
 
 type UserStats = {
   sessions?: number;
@@ -31,6 +32,20 @@ export default function ProgressScreen() {
     level: 1,
     completedChallenges: [],
   });
+
+  const { isDark } = useTheme();
+
+  const colors = {
+    bg: isDark ? "#070A0F" : "#F3F6FB",
+    text: isDark ? "#FFFFFF" : "#07111F",
+    muted: isDark ? "rgba(255,255,255,0.72)" : "rgba(7,17,31,0.68)",
+    card: isDark ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.92)",
+    hero: isDark ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.94)",
+    softBorder: isDark ? "rgba(255,255,255,0.12)" : "rgba(7,17,31,0.12)",
+    orangeBorder: isDark ? "rgba(255,122,0,0.45)" : "rgba(255,122,0,0.35)",
+    blueBorder: isDark ? "rgba(77,163,255,0.45)" : "rgba(46,139,255,0.35)",
+    progressBg: isDark ? "rgba(255,255,255,0.12)" : "rgba(7,17,31,0.12)",
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -97,97 +112,177 @@ export default function ProgressScreen() {
   return (
     <ImageBackground
       source={require("../assets/images/ring-bg.png")}
-      style={styles.bg}
+      style={[styles.bg, { backgroundColor: colors.bg }]}
       resizeMode="cover"
-      imageStyle={{ opacity: 0.65 }}
+      imageStyle={{ opacity: isDark ? 0.65 : 0.15 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.topBar}>
           <Pressable onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={26} color="white" />
+            <Ionicons
+              name="arrow-back"
+              size={26}
+              color={isDark ? "white" : "#07111F"}
+            />
           </Pressable>
 
-          <Text style={styles.title}>Progreso</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Progreso</Text>
 
           <View style={{ width: 26 }} />
         </View>
 
-        <View style={styles.levelCard}>
+        <View
+          style={[
+            styles.levelCard,
+            {
+              backgroundColor: colors.hero,
+              borderColor: colors.orangeBorder,
+            },
+          ]}
+        >
           <View style={styles.circle}>
-            <Text style={styles.levelText}>Nivel {level}</Text>
+            <Text style={[styles.levelText, { color: colors.text }]}>
+              Nivel {level}
+            </Text>
             <Text style={styles.percentText}>{challengePercent}%</Text>
           </View>
 
-          <Text style={styles.levelInfo}>
+          <Text style={[styles.levelInfo, { color: colors.muted }]}>
             {completed.length} de {totalChallenges} retos completados
           </Text>
 
-          <View style={styles.progressBar}>
+          <View style={[styles.progressBar, { backgroundColor: colors.progressBg }]}>
             <View style={[styles.progressFill, { width: `${challengePercent}%` }]} />
           </View>
         </View>
 
         <View style={styles.statsRow}>
-          <View style={styles.statCardBlue}>
+          <View
+            style={[
+              styles.statCard,
+              { backgroundColor: colors.card, borderColor: colors.blueBorder },
+            ]}
+          >
             <Ionicons name="checkmark-done-outline" size={28} color="#4DA3FF" />
-            <Text style={styles.statValue}>{sessions}</Text>
-            <Text style={styles.statLabel}>Sesiones</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>
+              {sessions}
+            </Text>
+            <Text style={[styles.statLabel, { color: colors.muted }]}>
+              Sesiones
+            </Text>
           </View>
 
-          <View style={styles.statCardOrange}>
+          <View
+            style={[
+              styles.statCard,
+              { backgroundColor: colors.card, borderColor: colors.orangeBorder },
+            ]}
+          >
             <Ionicons name="time-outline" size={28} color="#FF7A00" />
-            <Text style={styles.statValue}>
+            <Text style={[styles.statValue, { color: colors.text }]}>
               {hours}h {minutes}m
             </Text>
-            <Text style={styles.statLabel}>Tiempo</Text>
+            <Text style={[styles.statLabel, { color: colors.muted }]}>
+              Tiempo
+            </Text>
           </View>
 
-          <View style={styles.statCardBlue}>
+          <View
+            style={[
+              styles.statCard,
+              { backgroundColor: colors.card, borderColor: colors.blueBorder },
+            ]}
+          >
             <Ionicons name="trophy-outline" size={28} color="#4DA3FF" />
-            <Text style={styles.statValue}>{completed.length}</Text>
-            <Text style={styles.statLabel}>Retos</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>
+              {completed.length}
+            </Text>
+            <Text style={[styles.statLabel, { color: colors.muted }]}>
+              Retos
+            </Text>
           </View>
         </View>
 
-        <View style={styles.lastCard}>
+        <View
+          style={[
+            styles.lastCard,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.softBorder,
+            },
+          ]}
+        >
           <View style={styles.lastHeader}>
             <Ionicons name="flame-outline" size={24} color="#FF7A00" />
-            <Text style={styles.lastTitle}>Último entrenamiento</Text>
+            <Text style={[styles.lastTitle, { color: colors.text }]}>
+              Último entrenamiento
+            </Text>
           </View>
 
           {stats.lastWorkoutTitle ? (
             <>
-              <Text style={styles.lastWorkout}>{stats.lastWorkoutTitle}</Text>
-              <Text style={styles.lastInfo}>
-                {stats.lastWorkoutRounds || 0} rondas · {stats.lastWorkoutMinutes || 0} min
+              <Text style={[styles.lastWorkout, { color: colors.text }]}>
+                {stats.lastWorkoutTitle}
+              </Text>
+              <Text style={[styles.lastInfo, { color: colors.muted }]}>
+                {stats.lastWorkoutRounds || 0} rondas ·{" "}
+                {stats.lastWorkoutMinutes || 0} min
               </Text>
             </>
           ) : (
-            <Text style={styles.emptyText}>
+            <Text style={[styles.emptyText, { color: colors.muted }]}>
               Aún no has completado ningún entrenamiento.
             </Text>
           )}
         </View>
 
-        <Text style={styles.sectionTitle}>Retos superados</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Retos superados
+        </Text>
 
         {completed.length === 0 ? (
-          <View style={styles.emptyChallengeCard}>
+          <View
+            style={[
+              styles.emptyChallengeCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.orangeBorder,
+              },
+            ]}
+          >
             <Ionicons name="trophy-outline" size={26} color="#FF7A00" />
-            <Text style={styles.emptyChallengeText}>
-              Aún no has completado ningún reto. Termina entrenamientos para desbloquearlos.
+            <Text style={[styles.emptyChallengeText, { color: colors.muted }]}>
+              Aún no has completado ningún reto. Termina entrenamientos para
+              desbloquearlos.
             </Text>
           </View>
         ) : (
           completed.map((challenge) => (
-            <View key={challenge.id} style={styles.completedChallengeCard}>
+            <View
+              key={challenge.id}
+              style={[
+                styles.completedChallengeCard,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.orangeBorder,
+                },
+              ]}
+            >
               <View style={styles.challengeIconOrange}>
-                <Ionicons name={getChallengeIcon(challenge.id) as any} size={22} color="white" />
+                <Ionicons
+                  name={getChallengeIcon(challenge.id) as any}
+                  size={22}
+                  color="white"
+                />
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text style={styles.challengeTitle}>{challenge.title}</Text>
-                <Text style={styles.challengeText}>{challenge.description}</Text>
+                <Text style={[styles.challengeTitle, { color: colors.text }]}>
+                  {challenge.title}
+                </Text>
+                <Text style={[styles.challengeText, { color: colors.muted }]}>
+                  {challenge.description}
+                </Text>
               </View>
 
               <Ionicons name="checkmark-circle" size={24} color="#FF7A00" />
@@ -195,27 +290,56 @@ export default function ProgressScreen() {
           ))
         )}
 
-        <Text style={styles.sectionTitle}>Retos pendientes</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Retos pendientes
+        </Text>
 
         {pending.map((challenge) => {
           const current = getChallengeProgress(challenge);
           const percent = Math.round((current / challenge.target) * 100);
 
           return (
-            <View key={challenge.id} style={styles.pendingChallengeCard}>
+            <View
+              key={challenge.id}
+              style={[
+                styles.pendingChallengeCard,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.blueBorder,
+                },
+              ]}
+            >
               <View style={styles.challengeIconBlue}>
-                <Ionicons name={getChallengeIcon(challenge.id) as any} size={22} color="white" />
+                <Ionicons
+                  name={getChallengeIcon(challenge.id) as any}
+                  size={22}
+                  color="white"
+                />
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text style={styles.challengeTitle}>{challenge.title}</Text>
-                <Text style={styles.challengeText}>{challenge.description}</Text>
+                <Text style={[styles.challengeTitle, { color: colors.text }]}>
+                  {challenge.title}
+                </Text>
+                <Text style={[styles.challengeText, { color: colors.muted }]}>
+                  {challenge.description}
+                </Text>
 
-                <View style={styles.smallProgressBar}>
-                  <View style={[styles.smallProgressFill, { width: `${percent}%` }]} />
+                <View
+                  style={[
+                    styles.smallProgressBar,
+                    { backgroundColor: colors.progressBg },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.smallProgressFill,
+                      { width: `${percent}%` },
+                    ]}
+                  />
                 </View>
 
-                <Text style={styles.challengeProgress}>
+                <Text style={[styles.challengeProgress, { color: colors.muted }]}>
                   {current} / {challenge.target}
                 </Text>
               </View>
@@ -236,32 +360,34 @@ export default function ProgressScreen() {
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: "#070A0F" },
+  bg: { flex: 1 },
+
   container: {
     padding: 20,
     paddingTop: 54,
     paddingBottom: 32,
   },
+
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 24,
   },
+
   title: {
-    color: "white",
     fontSize: 26,
     fontWeight: "900",
   },
+
   levelCard: {
-    backgroundColor: "rgba(0,0,0,0.7)",
     borderRadius: 24,
     padding: 22,
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "rgba(255,122,0,0.45)",
     marginBottom: 22,
   },
+
   circle: {
     width: 150,
     height: 150,
@@ -272,148 +398,139 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 16,
   },
+
   levelText: {
-    color: "white",
     fontSize: 24,
     fontWeight: "900",
   },
+
   percentText: {
     color: "#FF7A00",
     fontSize: 18,
     fontWeight: "800",
     marginTop: 4,
   },
+
   levelInfo: {
-    color: "rgba(255,255,255,0.75)",
     fontSize: 14,
     marginBottom: 12,
     textAlign: "center",
   },
+
   progressBar: {
     width: "100%",
     height: 12,
     borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.12)",
     overflow: "hidden",
   },
+
   progressFill: {
     height: "100%",
     borderRadius: 10,
     backgroundColor: "#FF7A00",
   },
+
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 22,
   },
-  statCardBlue: {
+
+  statCard: {
     width: "31%",
-    backgroundColor: "rgba(0,0,0,0.65)",
     padding: 14,
     borderRadius: 18,
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "rgba(77,163,255,0.45)",
   },
-  statCardOrange: {
-    width: "31%",
-    backgroundColor: "rgba(0,0,0,0.65)",
-    padding: 14,
-    borderRadius: 18,
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,122,0,0.45)",
-  },
+
   statValue: {
-    color: "white",
     fontSize: 18,
     fontWeight: "900",
     marginTop: 8,
     textAlign: "center",
   },
+
   statLabel: {
-    color: "rgba(255,255,255,0.68)",
     fontSize: 12,
     marginTop: 4,
   },
+
   lastCard: {
-    backgroundColor: "rgba(0,0,0,0.68)",
     borderRadius: 22,
     padding: 20,
     borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.12)",
     marginBottom: 22,
   },
+
   lastHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
   },
+
   lastTitle: {
-    color: "white",
     fontSize: 18,
     fontWeight: "900",
     marginLeft: 8,
   },
+
   lastWorkout: {
-    color: "white",
     fontSize: 20,
     fontWeight: "900",
     marginBottom: 6,
   },
+
   lastInfo: {
-    color: "rgba(255,255,255,0.7)",
     fontSize: 14,
   },
+
   emptyText: {
-    color: "rgba(255,255,255,0.72)",
     lineHeight: 20,
   },
+
   sectionTitle: {
-    color: "white",
     fontSize: 19,
     fontWeight: "900",
     marginBottom: 12,
     marginTop: 4,
   },
+
   emptyChallengeCard: {
-    backgroundColor: "rgba(0,0,0,0.62)",
     borderRadius: 18,
     padding: 16,
     borderWidth: 1.5,
-    borderColor: "rgba(255,122,0,0.25)",
     marginBottom: 20,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
+
   emptyChallengeText: {
-    color: "rgba(255,255,255,0.72)",
     flex: 1,
     lineHeight: 20,
   },
+
   completedChallengeCard: {
-    backgroundColor: "rgba(0,0,0,0.65)",
     borderRadius: 18,
     padding: 16,
     borderWidth: 1.5,
-    borderColor: "rgba(255,122,0,0.45)",
     marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
+
   pendingChallengeCard: {
-    backgroundColor: "rgba(0,0,0,0.62)",
     borderRadius: 18,
     padding: 16,
     borderWidth: 1.5,
-    borderColor: "rgba(77,163,255,0.35)",
     marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
+
   challengeIconOrange: {
     width: 42,
     height: 42,
@@ -422,6 +539,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   challengeIconBlue: {
     width: 42,
     height: 42,
@@ -430,35 +548,37 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   challengeTitle: {
-    color: "white",
     fontSize: 16,
     fontWeight: "900",
     marginBottom: 4,
   },
+
   challengeText: {
-    color: "rgba(255,255,255,0.68)",
     fontSize: 13,
     lineHeight: 18,
   },
+
   smallProgressBar: {
     height: 8,
     borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.12)",
     marginTop: 10,
     overflow: "hidden",
   },
+
   smallProgressFill: {
     height: "100%",
     borderRadius: 8,
     backgroundColor: "#2E8BFF",
   },
+
   challengeProgress: {
-    color: "rgba(255,255,255,0.65)",
     fontSize: 12,
     marginTop: 6,
     fontWeight: "700",
   },
+
   trainBtn: {
     height: 58,
     borderRadius: 18,
@@ -469,6 +589,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 12,
   },
+
   trainBtnText: {
     color: "white",
     fontSize: 17,

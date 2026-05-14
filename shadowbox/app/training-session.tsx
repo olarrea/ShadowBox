@@ -8,6 +8,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
@@ -424,12 +425,18 @@ export default function TrainScreen() {
 
         <Text style={styles.roundDescription}>{currentRound.description}</Text>
 
-        <View style={styles.imageTag}>
-          <Ionicons name="image-outline" size={18} color="#FF7A00" />
-          <Text style={styles.imageTagText}>
-            Referencia visual: {currentRound.image || "sin imagen"}
-          </Text>
-        </View>
+        {currentRound.image ? (
+          <Image
+            source={{ uri: currentRound.image }}
+            style={styles.roundImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.imageTag}>
+            <Ionicons name="image-outline" size={18} color="#FF7A00" />
+            <Text style={styles.imageTagText}>Sin imagen de referencia</Text>
+          </View>
+        )}
 
         <View style={styles.actionsRow}>
           <Pressable
@@ -731,6 +738,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "900",
     lineHeight: 18,
+  },
+
+  roundImage: {
+    width: "100%",
+    height: 130,
+    borderRadius: 18,
+    marginBottom: 18,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,122,0,0.35)",
   },
 
   fakeBottomRow: {

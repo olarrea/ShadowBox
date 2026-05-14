@@ -8,9 +8,11 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../firebaseConfig";
+import { useTheme } from "../themeContext";
 import {
   collection,
   doc,
@@ -56,6 +58,7 @@ function formatLevel(level: string) {
 
 export default function WorkoutDetailScreen() {
   const { workoutId } = useLocalSearchParams();
+
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [loading, setLoading] = useState(true);
   const [favorite, setFavorite] = useState(false);
@@ -64,7 +67,20 @@ export default function WorkoutDetailScreen() {
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
   const [userRating, setUserRating] = useState(0);
+
+  const { isDark } = useTheme();
   const isOwnWorkout = workout?.createdBy === auth.currentUser?.uid;
+
+  const colors = {
+    bg: isDark ? "#070A0F" : "#F3F6FB",
+    text: isDark ? "#FFFFFF" : "#07111F",
+    muted: isDark ? "rgba(255,255,255,0.72)" : "rgba(7,17,31,0.68)",
+    card: isDark ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.92)",
+    hero: isDark ? "rgba(0,0,0,0.72)" : "rgba(255,255,255,0.94)",
+    softBorder: isDark ? "rgba(255,255,255,0.1)" : "rgba(7,17,31,0.12)",
+    orangeBorder: isDark ? "rgba(255,122,0,0.45)" : "rgba(255,122,0,0.35)",
+    placeholder: isDark ? "rgba(255,255,255,0.06)" : "rgba(7,17,31,0.06)",
+  };
 
   useEffect(() => {
     if (workoutId) {
@@ -110,13 +126,7 @@ export default function WorkoutDetailScreen() {
     try {
       if (!workoutId) return;
 
-      const ratingsRef = collection(
-        db,
-        "workouts",
-        String(workoutId),
-        "ratings"
-      );
-
+      const ratingsRef = collection(db, "workouts", String(workoutId), "ratings");
       const snap = await getDocs(ratingsRef);
 
       if (snap.empty) {
@@ -168,10 +178,7 @@ export default function WorkoutDetailScreen() {
       if (!workoutId || !workout) return;
 
       if (workout.createdBy === user.uid) {
-        Alert.alert(
-          "No disponible",
-          "No puedes valorar un entrenamiento creado por ti."
-        );
+        Alert.alert("No disponible", "No puedes valorar un entrenamiento creado por ti.");
         return;
       }
 
@@ -211,13 +218,13 @@ export default function WorkoutDetailScreen() {
   }
 
   async function checkDownloaded() {
-  try {
-    const localDownloaded = isWorkoutDownloaded(String(workoutId));
-    setDownloaded(localDownloaded);
-  } catch (error) {
-    console.log("ERROR REVISANDO DESCARGA LOCAL:", error);
+    try {
+      const localDownloaded = isWorkoutDownloaded(String(workoutId));
+      setDownloaded(localDownloaded);
+    } catch (error) {
+      console.log("ERROR REVISANDO DESCARGA LOCAL:", error);
+    }
   }
-}
 
   async function toggleFavorite() {
     try {
@@ -257,63 +264,57 @@ export default function WorkoutDetailScreen() {
   }
 
   async function toggleDownload() {
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      Alert.alert("Error", "Debes iniciar sesión.");
-      return;
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert("Error", "Debes iniciar sesión.");
+        return;
+      }
+
+      if (!workout) return;
+
+      setDownloadLoading(true);
+
+      const downloadRef = doc(db, "users", user.uid, "downloads", String(workoutId));
+
+      if (downloaded) {
+        deleteOfflineWorkout(String(workoutId));
+        await deleteDoc(downloadRef);
+        setDownloaded(false);
+      } else {
+        saveOfflineWorkout(String(workoutId), {
+          id: String(workoutId),
+          title: workout.title,
+          description: workout.description,
+          level: workout.level,
+          estimatedMinutes: workout.estimatedMinutes,
+          createdBy: workout.createdBy || "system",
+          rounds: workout.rounds || [],
+        });
+
+        await setDoc(downloadRef, {
+          title: workout.title,
+          description: workout.description,
+          level: workout.level,
+          estimatedMinutes: workout.estimatedMinutes,
+          createdBy: workout.createdBy || "system",
+          rounds: workout.rounds || [],
+          downloadedAt: new Date().toISOString(),
+        });
+
+        setDownloaded(true);
+      }
+    } catch (error) {
+      console.log("ERROR TOGGLE DOWNLOAD:", error);
+      Alert.alert("Error", "No se pudo actualizar la descarga.");
+    } finally {
+      setDownloadLoading(false);
     }
-
-    if (!workout) return;
-
-    setDownloadLoading(true);
-
-    const downloadRef = doc(
-      db,
-      "users",
-      user.uid,
-      "downloads",
-      String(workoutId)
-    );
-
-    if (downloaded) {
-      deleteOfflineWorkout(String(workoutId));
-      await deleteDoc(downloadRef);
-      setDownloaded(false);
-    } else {
-      saveOfflineWorkout(String(workoutId), {
-        id: String(workoutId),
-        title: workout.title,
-        description: workout.description,
-        level: workout.level,
-        estimatedMinutes: workout.estimatedMinutes,
-        createdBy: workout.createdBy || "system",
-        rounds: workout.rounds || [],
-      });
-
-      await setDoc(downloadRef, {
-        title: workout.title,
-        description: workout.description,
-        level: workout.level,
-        estimatedMinutes: workout.estimatedMinutes,
-        createdBy: workout.createdBy || "system",
-        rounds: workout.rounds || [],
-        downloadedAt: new Date().toISOString(),
-      });
-
-      setDownloaded(true);
-    }
-  } catch (error) {
-    console.log("ERROR TOGGLE DOWNLOAD:", error);
-    Alert.alert("Error", "No se pudo actualizar la descarga.");
-  } finally {
-    setDownloadLoading(false);
   }
-}
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: colors.bg }]}>
         <ActivityIndicator size="large" color="#FF7A00" />
       </View>
     );
@@ -321,8 +322,8 @@ export default function WorkoutDetailScreen() {
 
   if (!workout) {
     return (
-      <View style={styles.center}>
-        <Text style={{ color: "white" }}>No se encontró el entrenamiento</Text>
+      <View style={[styles.center, { backgroundColor: colors.bg }]}>
+        <Text style={{ color: colors.text }}>No se encontró el entrenamiento</Text>
       </View>
     );
   }
@@ -330,17 +331,23 @@ export default function WorkoutDetailScreen() {
   return (
     <ImageBackground
       source={require("../assets/images/ring-bg.png")}
-      style={styles.bg}
+      style={[styles.bg, { backgroundColor: colors.bg }]}
       resizeMode="cover"
-      imageStyle={{ opacity: 0.65 }}
+      imageStyle={{ opacity: isDark ? 0.65 : 0.15 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.topBar}>
           <Pressable onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={26} color="white" />
+            <Ionicons
+              name="arrow-back"
+              size={26}
+              color={isDark ? "white" : "#07111F"}
+            />
           </Pressable>
 
-          <Text style={styles.topTitle}>Entrenamiento</Text>
+          <Text style={[styles.topTitle, { color: colors.text }]}>
+            Entrenamiento
+          </Text>
 
           <Pressable onPress={toggleFavorite} disabled={favoriteLoading}>
             <Ionicons
@@ -351,75 +358,168 @@ export default function WorkoutDetailScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.heroCard}>
-          <Text style={styles.heroSmall}>Plan actual</Text>
-          <Text style={styles.heroTitle}>{workout.title}</Text>
-          <Text style={styles.heroDescription}>{workout.description}</Text>
+        <View
+          style={[
+            styles.heroCard,
+            {
+              backgroundColor: colors.hero,
+              borderColor: colors.orangeBorder,
+            },
+          ]}
+        >
+          <Text style={[styles.heroSmall, { color: colors.muted }]}>
+            Plan actual
+          </Text>
+
+          <Text style={[styles.heroTitle, { color: colors.text }]}>
+            {workout.title}
+          </Text>
+
+          <Text style={[styles.heroDescription, { color: colors.muted }]}>
+            {workout.description}
+          </Text>
 
           <View style={styles.ratingMiniRow}>
             <Ionicons name="star" size={18} color="#FF7A00" />
-            <Text style={styles.ratingMiniText}>
+            <Text style={[styles.ratingMiniText, { color: colors.muted }]}>
               {averageRating}/5 valoración media
             </Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Resumen</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Resumen
+        </Text>
 
         <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
+          <View
+            style={[
+              styles.summaryCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.softBorder,
+              },
+            ]}
+          >
             <Ionicons name="time-outline" size={24} color="#2E8BFF" />
-            <Text style={styles.summaryNumber}>{workout.estimatedMinutes}</Text>
-            <Text style={styles.summaryLabel}>Minutos</Text>
+            <Text style={[styles.summaryNumber, { color: colors.text }]}>
+              {workout.estimatedMinutes}
+            </Text>
+            <Text style={[styles.summaryLabel, { color: colors.muted }]}>
+              Minutos
+            </Text>
           </View>
 
-          <View style={styles.summaryCard}>
+          <View
+            style={[
+              styles.summaryCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.softBorder,
+              },
+            ]}
+          >
             <Ionicons name="layers-outline" size={24} color="#FF7A00" />
-            <Text style={styles.summaryNumber}>{workout.rounds?.length || 0}</Text>
-            <Text style={styles.summaryLabel}>Rondas</Text>
+            <Text style={[styles.summaryNumber, { color: colors.text }]}>
+              {workout.rounds?.length || 0}
+            </Text>
+            <Text style={[styles.summaryLabel, { color: colors.muted }]}>
+              Rondas
+            </Text>
           </View>
 
-          <View style={styles.summaryCard}>
+          <View
+            style={[
+              styles.summaryCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.softBorder,
+              },
+            ]}
+          >
             <Ionicons name="fitness-outline" size={24} color="#2E8BFF" />
-            <Text style={styles.summaryNumber}>{formatLevel(workout.level)}</Text>
-            <Text style={styles.summaryLabel}>Nivel</Text>
+            <Text style={[styles.summaryNumber, { color: colors.text }]}>
+              {formatLevel(workout.level)}
+            </Text>
+            <Text style={[styles.summaryLabel, { color: colors.muted }]}>
+              Nivel
+            </Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Rondas del entrenamiento</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Rondas del entrenamiento
+        </Text>
 
         {workout.rounds && workout.rounds.length > 0 ? (
           workout.rounds.map((round, index) => (
-            <View key={index} style={styles.roundCard}>
+            <View
+              key={index}
+              style={[
+                styles.roundCard,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.softBorder,
+                },
+              ]}
+            >
               <View style={styles.roundHeader}>
                 <View style={styles.roundNumber}>
                   <Text style={styles.roundNumberText}>{index + 1}</Text>
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.roundTitle}>{round.title}</Text>
+                  <Text style={[styles.roundTitle, { color: colors.text }]}>
+                    {round.title}
+                  </Text>
                   <Text style={styles.roundDuration}>
                     ⏱ {formatSeconds(round.duration)}
                   </Text>
                 </View>
               </View>
 
-              <Text style={styles.roundDescription}>{round.description}</Text>
+              <Text style={[styles.roundDescription, { color: colors.muted }]}>
+                {round.description}
+              </Text>
 
-              <View style={styles.roundImagePlaceholder}>
-                <Ionicons name="fitness-outline" size={28} color="#FF7A00" />
-                <Text style={styles.roundImageText}>
-                  Referencia visual: {round.image || "sin imagen"}
-                </Text>
-              </View>
+              {round.image ? (
+                <Image
+                  source={{ uri: round.image }}
+                  style={styles.roundImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.roundImagePlaceholder,
+                    {
+                      backgroundColor: colors.placeholder,
+                      borderColor: colors.softBorder,
+                    },
+                  ]}
+                >
+                  <Ionicons name="fitness-outline" size={28} color="#FF7A00" />
+                  <Text style={[styles.roundImageText, { color: colors.muted }]}>
+                    Sin imagen de referencia
+                  </Text>
+                </View>
+              )}
             </View>
           ))
         ) : (
-          <View style={styles.noRoundsCard}>
-            <Text style={styles.noRoundsTitle}>
+          <View
+            style={[
+              styles.noRoundsCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.softBorder,
+              },
+            ]}
+          >
+            <Text style={[styles.noRoundsTitle, { color: colors.text }]}>
               Este entrenamiento aún no tiene rondas cargadas
             </Text>
-            <Text style={styles.noRoundsText}>
+            <Text style={[styles.noRoundsText, { color: colors.muted }]}>
               Añade las rondas en Firestore para mostrar cada bloque con su
               duración, explicación e imagen.
             </Text>
@@ -472,17 +572,29 @@ export default function WorkoutDetailScreen() {
           </Text>
         </Pressable>
 
-        <View style={styles.ratingCard}>
+        <View
+          style={[
+            styles.ratingCard,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.orangeBorder,
+            },
+          ]}
+        >
           {isOwnWorkout ? (
             <>
-              <Text style={styles.ratingTitle}>Tu entrenamiento</Text>
-              <Text style={styles.ownerRatingText}>
+              <Text style={[styles.ratingTitle, { color: colors.text }]}>
+                Tu entrenamiento
+              </Text>
+              <Text style={[styles.ownerRatingText, { color: colors.muted }]}>
                 Este entrenamiento ha sido creado por ti, por eso no puedes valorarlo.
               </Text>
             </>
           ) : (
             <>
-              <Text style={styles.ratingTitle}>Valora este entrenamiento</Text>
+              <Text style={[styles.ratingTitle, { color: colors.text }]}>
+                Valora este entrenamiento
+              </Text>
 
               <View style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -496,7 +608,7 @@ export default function WorkoutDetailScreen() {
                 ))}
               </View>
 
-              <Text style={styles.averageText}>
+              <Text style={[styles.averageText, { color: colors.muted }]}>
                 Valoración media: {averageRating}/5
               </Text>
             </>
@@ -510,7 +622,6 @@ export default function WorkoutDetailScreen() {
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
-    backgroundColor: "#070A0F",
   },
 
   container: {
@@ -523,7 +634,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#070A0F",
   },
 
   topBar: {
@@ -534,17 +644,14 @@ const styles = StyleSheet.create({
   },
 
   topTitle: {
-    color: "white",
     fontSize: 24,
     fontWeight: "800",
   },
 
   heroCard: {
-    backgroundColor: "rgba(0,0,0,0.72)",
     borderRadius: 24,
     padding: 22,
     borderWidth: 2,
-    borderColor: "rgba(255,122,0,0.45)",
     marginBottom: 22,
     shadowColor: "#FF7A00",
     shadowOpacity: 0.2,
@@ -553,13 +660,11 @@ const styles = StyleSheet.create({
   },
 
   heroSmall: {
-    color: "rgba(255,255,255,0.65)",
     fontSize: 14,
     marginBottom: 6,
   },
 
   heroTitle: {
-    color: "white",
     fontSize: 28,
     fontWeight: "900",
     marginBottom: 10,
@@ -567,7 +672,6 @@ const styles = StyleSheet.create({
   },
 
   heroDescription: {
-    color: "rgba(255,255,255,0.78)",
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 14,
@@ -580,12 +684,10 @@ const styles = StyleSheet.create({
   },
 
   ratingMiniText: {
-    color: "rgba(255,255,255,0.8)",
     fontWeight: "700",
   },
 
   sectionTitle: {
-    color: "#fff",
     fontSize: 18,
     fontWeight: "800",
     marginBottom: 14,
@@ -600,16 +702,13 @@ const styles = StyleSheet.create({
 
   summaryCard: {
     width: "31%",
-    backgroundColor: "rgba(0,0,0,0.6)",
     borderRadius: 18,
     padding: 14,
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.1)",
   },
 
   summaryNumber: {
-    color: "#fff",
     fontWeight: "900",
     fontSize: 16,
     marginTop: 8,
@@ -617,19 +716,16 @@ const styles = StyleSheet.create({
   },
 
   summaryLabel: {
-    color: "rgba(255,255,255,0.72)",
     fontSize: 12,
     marginTop: 5,
     textAlign: "center",
   },
 
   roundCard: {
-    backgroundColor: "rgba(0,0,0,0.62)",
     borderRadius: 20,
     padding: 16,
     marginBottom: 14,
     borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.08)",
   },
 
   roundHeader: {
@@ -654,7 +750,6 @@ const styles = StyleSheet.create({
   },
 
   roundTitle: {
-    color: "white",
     fontSize: 17,
     fontWeight: "800",
   },
@@ -666,46 +761,47 @@ const styles = StyleSheet.create({
   },
 
   roundDescription: {
-    color: "rgba(255,255,255,0.76)",
     lineHeight: 20,
     marginBottom: 14,
+  },
+
+  roundImage: {
+    width: "100%",
+    height: 150,
+    borderRadius: 16,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255,122,0,0.35)",
   },
 
   roundImagePlaceholder: {
     height: 90,
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 12,
   },
 
   roundImageText: {
-    color: "#aaa",
     marginTop: 8,
     textAlign: "center",
   },
 
   noRoundsCard: {
-    backgroundColor: "rgba(0,0,0,0.6)",
     borderRadius: 20,
     padding: 18,
     marginBottom: 18,
     borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.08)",
   },
 
   noRoundsTitle: {
-    color: "white",
     fontSize: 16,
     fontWeight: "800",
     marginBottom: 8,
   },
 
   noRoundsText: {
-    color: "rgba(255,255,255,0.72)",
     lineHeight: 20,
   },
 
@@ -767,18 +863,15 @@ const styles = StyleSheet.create({
   },
 
   ratingCard: {
-    backgroundColor: "rgba(0,0,0,0.6)",
     borderRadius: 20,
     padding: 18,
     marginTop: 16,
     marginBottom: 18,
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "rgba(255,122,0,0.25)",
   },
 
   ratingTitle: {
-    color: "white",
     fontSize: 17,
     fontWeight: "800",
     marginBottom: 14,
@@ -791,12 +884,10 @@ const styles = StyleSheet.create({
   },
 
   averageText: {
-    color: "rgba(255,255,255,0.75)",
     fontWeight: "700",
   },
 
   ownerRatingText: {
-    color: "rgba(255,255,255,0.72)",
     textAlign: "center",
     lineHeight: 20,
     fontWeight: "700",

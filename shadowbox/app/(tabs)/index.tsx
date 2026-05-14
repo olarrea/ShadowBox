@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../firebaseConfig";
+import { useTheme } from "../../themeContext";
 
 type UserData = {
   name?: string;
@@ -23,6 +24,19 @@ type UserData = {
 
 export default function HomeScreen() {
   const [userData, setUserData] = useState<UserData | null>(null);
+  const { isDark } = useTheme();
+
+  const colors = {
+    bg: isDark ? "#070A0F" : "#F3F6FB",
+    text: isDark ? "#FFFFFF" : "#07111F",
+    muted: isDark ? "rgba(255,255,255,0.78)" : "rgba(7,17,31,0.72)",
+    card: isDark ? "rgba(0,0,0,0.72)" : "rgba(255,255,255,0.92)",
+    cardSoft: isDark ? "rgba(0,0,0,0.62)" : "rgba(255,255,255,0.88)",
+    orangeBorder: isDark ? "rgba(255,122,0,0.55)" : "rgba(255,122,0,0.42)",
+    blueBorder: isDark ? "rgba(46,139,255,0.4)" : "rgba(46,139,255,0.35)",
+    avatarBg: isDark ? "rgba(255,255,255,0.12)" : "rgba(7,17,31,0.08)",
+    avatarBorder: isDark ? "#FFFFFF" : "#2E8BFF",
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -49,42 +63,84 @@ export default function HomeScreen() {
   return (
     <ImageBackground
       source={require("../../assets/images/ring-bg.png")}
-      style={styles.bg}
+      style={[styles.bg, { backgroundColor: colors.bg }]}
       resizeMode="cover"
-      imageStyle={{ opacity: 0.65 }}
+      imageStyle={{ opacity: isDark ? 0.65 : 0.15 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.profileCard}>
+        <View
+          style={[
+            styles.profileCard,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.orangeBorder,
+            },
+          ]}
+        >
           {userData?.photo ? (
-            <Image source={{ uri: userData.photo }} style={styles.avatarImage} />
+            <Image
+              source={{ uri: userData.photo }}
+              style={[
+                styles.avatarImage,
+                {
+                  borderColor: colors.avatarBorder,
+                  backgroundColor: colors.avatarBg,
+                },
+              ]}
+            />
           ) : (
-            <View style={styles.avatar}>
-              <Ionicons name="person" size={34} color="#FFFFFF" />
+            <View
+              style={[
+                styles.avatar,
+                {
+                  backgroundColor: colors.avatarBg,
+                  borderColor: colors.avatarBorder,
+                },
+              ]}
+            >
+              <Ionicons
+                name="person"
+                size={34}
+                color={isDark ? "#FFFFFF" : "#07111F"}
+              />
             </View>
           )}
 
           <View style={{ flex: 1 }}>
-            <Text style={styles.name} numberOfLines={1}>
+            <Text
+              style={[styles.name, { color: colors.text }]}
+              numberOfLines={1}
+            >
               {userData?.name || userData?.email || "Usuario"}
             </Text>
             <Text style={styles.level}>Nivel {userData?.level || 1}</Text>
           </View>
         </View>
 
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>¿Qué es ShadowBox?</Text>
+        <View
+          style={[
+            styles.infoCard,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.blueBorder,
+            },
+          ]}
+        >
+          <Text style={[styles.infoTitle, { color: colors.text }]}>
+            ¿Qué es ShadowBox?
+          </Text>
 
-          <Text style={styles.infoText}>
+          <Text style={[styles.infoText, { color: colors.muted }]}>
             ShadowBox es una aplicación móvil diseñada para entrenar boxeo en casa
             de forma estructurada, accesible y motivadora.
           </Text>
 
-          <Text style={styles.infoText}>
+          <Text style={[styles.infoText, { color: colors.muted }]}>
             Puedes seguir entrenamientos, crear tus propias rutinas, guardar tus
             favoritos, descargar sesiones y consultar tu progreso personal.
           </Text>
 
-          <Text style={styles.infoText}>
+          <Text style={[styles.infoText, { color: colors.muted }]}>
             Su objetivo es ayudarte a mejorar técnica, resistencia y constancia
             mediante planes claros y entrenamientos adaptados a tu nivel.
           </Text>
@@ -99,7 +155,17 @@ export default function HomeScreen() {
         </Pressable>
 
         <Pressable
-          style={styles.generateButton}
+          style={[
+            styles.generateButton,
+            {
+              backgroundColor: isDark
+                ? "rgba(255,122,0,0.32)"
+                : "rgba(255,122,0,0.85)",
+              borderColor: isDark
+                ? "rgba(255,122,0,0.65)"
+                : "rgba(255,122,0,0.9)",
+            },
+          ]}
           onPress={() => router.push({ pathname: "/generate" } as any)}
         >
           <Ionicons name="navigate-outline" size={22} color="#FFFFFF" />
@@ -114,9 +180,19 @@ export default function HomeScreen() {
           <Text style={styles.progressButtonText}>Ver progreso</Text>
         </Pressable>
 
-        <View style={styles.motivationCard}>
+        <View
+          style={[
+            styles.motivationCard,
+            {
+              backgroundColor: colors.cardSoft,
+              borderColor: isDark
+                ? "rgba(255,122,0,0.35)"
+                : "rgba(255,122,0,0.45)",
+            },
+          ]}
+        >
           <Ionicons name="flash-outline" size={22} color="#FF7A00" />
-          <Text style={styles.motivationText}>
+          <Text style={[styles.motivationText, { color: colors.text }]}>
             “El campeón se construye ronda a ronda.”
           </Text>
         </View>
@@ -128,7 +204,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
-    backgroundColor: "#070A0F",
   },
 
   container: {
@@ -138,10 +213,8 @@ const styles = StyleSheet.create({
   },
 
   profileCard: {
-    backgroundColor: "rgba(0,0,0,0.72)",
     borderRadius: 24,
     borderWidth: 2,
-    borderColor: "rgba(255,122,0,0.55)",
     padding: 18,
     flexDirection: "row",
     alignItems: "center",
@@ -152,11 +225,9 @@ const styles = StyleSheet.create({
     width: 66,
     height: 66,
     borderRadius: 33,
-    backgroundColor: "rgba(255,255,255,0.12)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#FFFFFF",
     marginRight: 16,
   },
 
@@ -165,13 +236,10 @@ const styles = StyleSheet.create({
     height: 66,
     borderRadius: 33,
     borderWidth: 2,
-    borderColor: "#FFFFFF",
     marginRight: 16,
-    backgroundColor: "rgba(255,255,255,0.12)",
   },
 
   name: {
-    color: "#FFFFFF",
     fontSize: 24,
     fontWeight: "900",
   },
@@ -184,23 +252,19 @@ const styles = StyleSheet.create({
   },
 
   infoCard: {
-    backgroundColor: "rgba(0,0,0,0.68)",
     borderRadius: 24,
     padding: 22,
     borderWidth: 1.5,
-    borderColor: "rgba(46,139,255,0.4)",
     marginBottom: 20,
   },
 
   infoTitle: {
-    color: "#FFFFFF",
     fontSize: 24,
     fontWeight: "900",
     marginBottom: 14,
   },
 
   infoText: {
-    color: "rgba(255,255,255,0.78)",
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 12,
@@ -226,9 +290,7 @@ const styles = StyleSheet.create({
   generateButton: {
     height: 56,
     borderRadius: 18,
-    backgroundColor: "rgba(255,122,0,0.32)",
     borderWidth: 1.5,
-    borderColor: "rgba(255,122,0,0.65)",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -260,17 +322,14 @@ const styles = StyleSheet.create({
   },
 
   motivationCard: {
-    backgroundColor: "rgba(0,0,0,0.62)",
     borderRadius: 20,
     padding: 18,
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "rgba(255,122,0,0.35)",
   },
 
   motivationText: {
-    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "800",
     marginLeft: 10,

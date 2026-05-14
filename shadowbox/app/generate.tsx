@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { auth, db } from "../firebaseConfig";
 import { collection, getDocs, doc, setDoc } from "firebase/firestore";
+import { useTheme } from "../themeContext";
 
 type Level = "Principiante" | "Intermedio" | "Avanzado";
 type Goal = "Resistencia" | "Técnica" | "Fuerza";
@@ -41,6 +42,21 @@ export default function GenerateScreen() {
   const [days, setDays] = useState(3);
   const [duration, setDuration] = useState(45);
   const [generating, setGenerating] = useState(false);
+
+  const { isDark } = useTheme();
+
+  const colors = {
+    bg: isDark ? "#070A0F" : "#F3F6FB",
+    text: isDark ? "#FFFFFF" : "#07111F",
+    muted: isDark ? "rgba(255,255,255,0.72)" : "rgba(7,17,31,0.68)",
+    card: isDark ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.92)",
+    panel: isDark ? "rgba(10,12,16,0.9)" : "rgba(255,255,255,0.96)",
+    inputBorder: isDark ? "rgba(46,139,255,0.55)" : "rgba(46,139,255,0.35)",
+    softBorder: isDark ? "rgba(255,255,255,0.10)" : "rgba(7,17,31,0.12)",
+    chipBg: isDark ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.9)",
+    chipActiveBg: isDark ? "rgba(255,122,0,0.20)" : "rgba(255,122,0,0.18)",
+    iconBg: isDark ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.88)",
+  };
 
   const durationLabel = useMemo(() => `${duration} min`, [duration]);
 
@@ -79,9 +95,7 @@ export default function GenerateScreen() {
       const selectedLevel = normalizeLevel(level);
 
       let matchingWorkouts = allWorkouts.filter(
-        (w) =>
-          w.level === selectedLevel &&
-          w.estimatedMinutes <= duration
+        (w) => w.level === selectedLevel && w.estimatedMinutes <= duration
       );
 
       if (matchingWorkouts.length === 0) {
@@ -132,28 +146,55 @@ export default function GenerateScreen() {
   return (
     <ImageBackground
       source={require("../assets/images/ring-bg.png")}
-      style={styles.bg}
+      style={[styles.bg, { backgroundColor: colors.bg }]}
       resizeMode="cover"
-      imageStyle={{ opacity: 0.65 }}
+      imageStyle={{ opacity: isDark ? 0.65 : 0.15 }}
     >
       <View style={styles.container}>
         <View style={styles.brandRow}>
-          <View style={styles.brandIcon}>
+          <View
+            style={[
+              styles.brandIcon,
+              {
+                backgroundColor: colors.iconBg,
+                borderColor: isDark
+                  ? "rgba(255,122,0,0.35)"
+                  : "rgba(255,122,0,0.45)",
+              },
+            ]}
+          >
             <Ionicons name="hand-left-outline" size={18} color="#FF7A00" />
           </View>
-          <Text style={styles.brandText}>
+
+          <Text style={[styles.brandText, { color: colors.text }]}>
             <Text style={{ color: "#2E8BFF", fontWeight: "800" }}>Shado</Text>
             <Text style={{ color: "#FF7A00", fontWeight: "800" }}>wBox</Text>
-            <Text style={styles.brandSub}> Boxing Training</Text>
+            <Text style={[styles.brandSub, { color: colors.muted }]}>
+              {" "}
+              Boxing Training
+            </Text>
           </Text>
         </View>
 
-        <Text style={styles.title}>Generar plan</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Generar plan</Text>
 
-        <Text style={styles.label}>Nivel del usuario</Text>
+        <Text style={[styles.label, { color: colors.text }]}>
+          Nivel del usuario
+        </Text>
 
-        <Pressable style={styles.dropdownBtn} onPress={() => setOpenLevel((v) => !v)}>
-          <Text style={styles.dropdownText}>{level}</Text>
+        <Pressable
+          style={[
+            styles.dropdownBtn,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.inputBorder,
+            },
+          ]}
+          onPress={() => setOpenLevel((v) => !v)}
+        >
+          <Text style={[styles.dropdownText, { color: colors.text }]}>
+            {level}
+          </Text>
           <Ionicons
             name={openLevel ? "chevron-up" : "chevron-down"}
             size={18}
@@ -162,7 +203,15 @@ export default function GenerateScreen() {
         </Pressable>
 
         {openLevel && (
-          <View style={styles.dropdownPanel}>
+          <View
+            style={[
+              styles.dropdownPanel,
+              {
+                backgroundColor: colors.panel,
+                borderColor: colors.softBorder,
+              },
+            ]}
+          >
             {LEVELS.map((l) => (
               <Pressable
                 key={l}
@@ -172,14 +221,18 @@ export default function GenerateScreen() {
                   setOpenLevel(false);
                 }}
               >
-                <Text style={styles.dropdownItemText}>{l}</Text>
+                <Text style={[styles.dropdownItemText, { color: colors.text }]}>
+                  {l}
+                </Text>
                 <Ionicons name="checkmark" size={18} color="#2E8BFF" />
               </Pressable>
             ))}
           </View>
         )}
 
-        <Text style={[styles.label, { marginTop: 16 }]}>Objetivo</Text>
+        <Text style={[styles.label, { color: colors.text, marginTop: 16 }]}>
+          Objetivo
+        </Text>
 
         <View style={styles.chipsRow}>
           <Chip
@@ -187,29 +240,44 @@ export default function GenerateScreen() {
             icon="radio-button-on-outline"
             active={goal === "Resistencia"}
             onPress={() => setGoal("Resistencia")}
+            colors={colors}
           />
           <Chip
             text="Técnica"
             icon="aperture-outline"
             active={goal === "Técnica"}
             onPress={() => setGoal("Técnica")}
+            colors={colors}
           />
           <Chip
             text="Fuerza"
             icon="barbell-outline"
             active={goal === "Fuerza"}
             onPress={() => setGoal("Fuerza")}
+            colors={colors}
           />
         </View>
 
-        <Text style={[styles.label, { marginTop: 16 }]}>Días por semana</Text>
+        <Text style={[styles.label, { color: colors.text, marginTop: 16 }]}>
+          Días por semana
+        </Text>
 
-        <View style={styles.controlCard}>
+        <View
+          style={[
+            styles.controlCard,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.softBorder,
+            },
+          ]}
+        >
           <Pressable style={styles.iconBtn} onPress={decDays}>
             <Ionicons name="remove" size={18} color="#2E8BFF" />
           </Pressable>
 
-          <Text style={styles.controlValue}>{days}</Text>
+          <Text style={[styles.controlValue, { color: colors.text }]}>
+            {days}
+          </Text>
 
           <Pressable style={styles.iconBtn} onPress={incDays}>
             <Ionicons name="add" size={18} color="#2E8BFF" />
@@ -218,10 +286,23 @@ export default function GenerateScreen() {
           <Ionicons name="calendar-outline" size={20} color="#2E8BFF" />
         </View>
 
-        <Text style={[styles.label, { marginTop: 16 }]}>Duración máxima por sesión</Text>
+        <Text style={[styles.label, { color: colors.text, marginTop: 16 }]}>
+          Duración máxima por sesión
+        </Text>
 
-        <Pressable style={styles.controlCard} onPress={cycleDuration}>
-          <Text style={styles.controlValue}>{durationLabel}</Text>
+        <Pressable
+          style={[
+            styles.controlCard,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.softBorder,
+            },
+          ]}
+          onPress={cycleDuration}
+        >
+          <Text style={[styles.controlValue, { color: colors.text }]}>
+            {durationLabel}
+          </Text>
           <Ionicons name="time-outline" size={20} color="#2E8BFF" />
         </Pressable>
 
@@ -237,7 +318,7 @@ export default function GenerateScreen() {
         </Pressable>
 
         <Pressable style={styles.backLink} onPress={() => router.back()}>
-          <Text style={styles.backText}>Volver</Text>
+          <Text style={[styles.backText, { color: colors.muted }]}>Volver</Text>
         </Pressable>
       </View>
     </ImageBackground>
@@ -249,40 +330,65 @@ function Chip({
   icon,
   active,
   onPress,
+  colors,
 }: {
   text: string;
   icon: keyof typeof Ionicons.glyphMap;
   active: boolean;
   onPress: () => void;
+  colors: any;
 }) {
   return (
-    <Pressable onPress={onPress} style={[styles.chip, active && styles.chipActive]}>
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.chip,
+        {
+          backgroundColor: active ? colors.chipActiveBg : colors.chipBg,
+          borderColor: "rgba(255,122,0,0.65)",
+        },
+      ]}
+    >
       <Ionicons name={icon} size={16} color="#FF7A00" style={{ marginRight: 8 }} />
-      <Text style={styles.chipText}>{text}</Text>
+      <Text style={[styles.chipText, { color: colors.text }]}>{text}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: "#070A0F" },
-  container: { flex: 1, paddingHorizontal: 18, paddingTop: 18 },
+  bg: { flex: 1 },
 
-  brandRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
+  container: {
+    flex: 1,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+  },
+
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 10,
+  },
+
   brandIcon: {
     width: 30,
     height: 30,
     borderRadius: 10,
-    backgroundColor: "rgba(0,0,0,0.45)",
     borderWidth: 1,
-    borderColor: "rgba(255,122,0,0.35)",
     alignItems: "center",
     justifyContent: "center",
   },
-  brandText: { color: "#FFFFFF", fontSize: 16 },
-  brandSub: { color: "rgba(255,255,255,0.6)", fontSize: 12 },
+
+  brandText: {
+    fontSize: 16,
+  },
+
+  brandSub: {
+    fontSize: 12,
+  },
 
   title: {
-    color: "#FFFFFF",
     fontSize: 34,
     fontWeight: "900",
     textAlign: "center",
@@ -290,29 +396,33 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
 
-  label: { color: "rgba(255,255,255,0.85)", fontSize: 16, marginBottom: 10 },
+  label: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
 
   dropdownBtn: {
     height: 54,
     borderRadius: 18,
-    backgroundColor: "rgba(0,0,0,0.55)",
     borderWidth: 2,
-    borderColor: "rgba(46,139,255,0.55)",
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  dropdownText: { color: "#FFFFFF", fontSize: 18, fontWeight: "700" },
+
+  dropdownText: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
 
   dropdownPanel: {
     marginTop: 10,
     borderRadius: 18,
     overflow: "hidden",
-    backgroundColor: "rgba(10,12,16,0.88)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
   },
+
   dropdownItem: {
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -320,9 +430,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  dropdownItemText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
 
-  chipsRow: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
+  dropdownItemText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  chipsRow: {
+    flexDirection: "row",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+
   chip: {
     flexDirection: "row",
     alignItems: "center",
@@ -330,26 +449,27 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 19,
     borderWidth: 2,
-    borderColor: "rgba(255,122,0,0.65)",
-    backgroundColor: "rgba(0,0,0,0.35)",
   },
-  chipActive: {
-    backgroundColor: "rgba(255,122,0,0.20)",
+
+  chipText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
-  chipText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
 
   controlCard: {
     height: 54,
     borderRadius: 22,
-    backgroundColor: "rgba(0,0,0,0.50)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  controlValue: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
+
+  controlValue: {
+    fontSize: 20,
+    fontWeight: "900",
+  },
 
   iconBtn: {
     width: 34,
@@ -374,8 +494,19 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 10,
   },
-  generateText: { color: "#FFFFFF", fontSize: 18, fontWeight: "900" },
 
-  backLink: { marginTop: 12, alignItems: "center" },
-  backText: { color: "rgba(255,255,255,0.55)", fontWeight: "700" },
+  generateText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+
+  backLink: {
+    marginTop: 12,
+    alignItems: "center",
+  },
+
+  backText: {
+    fontWeight: "700",
+  },
 });

@@ -13,6 +13,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { useTheme } from "../../themeContext";
 
 type UserData = {
   email?: string;
@@ -25,6 +26,17 @@ type UserData = {
 
 export default function ProfileScreen() {
   const [userData, setUserData] = useState<UserData | null>(null);
+  const { isDark } = useTheme();
+
+  const colors = {
+    bg: isDark ? "#070A0F" : "#F3F6FB",
+    text: isDark ? "#FFFFFF" : "#07111F",
+    muted: isDark ? "rgba(255,255,255,0.68)" : "rgba(7,17,31,0.65)",
+    card: isDark ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.92)",
+    avatarBg: isDark ? "rgba(255,255,255,0.15)" : "rgba(7,17,31,0.08)",
+    border: isDark ? "rgba(255,255,255,0.14)" : "rgba(46,139,255,0.22)",
+    avatarBorder: isDark ? "#FFFFFF" : "#2E8BFF",
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -70,62 +82,128 @@ export default function ProfileScreen() {
   return (
     <ImageBackground
       source={require("../../assets/images/ring-bg.png")}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.bg }]}
       resizeMode="cover"
-      imageStyle={{ opacity: 0.38 }}
+      imageStyle={{ opacity: isDark ? 0.38 : 0.15 }}
     >
       <View style={styles.header}>
         {userData?.photo ? (
-          <Image source={{ uri: userData.photo }} style={styles.avatar} />
+          <Image
+            source={{ uri: userData.photo }}
+            style={[styles.avatar, { borderColor: colors.avatarBorder }]}
+          />
         ) : (
-          <View style={styles.defaultAvatar}>
-            <Ionicons name="person" size={48} color="white" />
+          <View
+            style={[
+              styles.defaultAvatar,
+              {
+                backgroundColor: colors.avatarBg,
+                borderColor: colors.avatarBorder,
+              },
+            ]}
+          >
+            <Ionicons
+              name="person"
+              size={48}
+              color={isDark ? "white" : "#07111F"}
+            />
           </View>
         )}
 
-        <Text style={styles.name}>
+        <Text style={[styles.name, { color: colors.text }]}>
           {userData?.name || userData?.email || "Usuario"}
         </Text>
       </View>
 
       <View style={styles.statsRow}>
-        <View style={styles.statCard}>
+        <View
+          style={[
+            styles.statCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <Ionicons name="flame-outline" size={24} color="#ff9f43" />
-          <Text style={styles.statNumber}>{userData?.sessions ?? 0}</Text>
-          <Text style={styles.statLabel}>Sesiones</Text>
+          <Text style={[styles.statNumber, { color: colors.text }]}>
+            {userData?.sessions ?? 0}
+          </Text>
+          <Text style={[styles.statLabel, { color: colors.muted }]}>
+            Sesiones
+          </Text>
         </View>
 
-        <View style={styles.statCard}>
+        <View
+          style={[
+            styles.statCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <Ionicons name="time-outline" size={24} color="#4da6ff" />
-          <Text style={styles.statNumber}>{userData?.totalTime ?? 0} min</Text>
-          <Text style={styles.statLabel}>Tiempo</Text>
+          <Text style={[styles.statNumber, { color: colors.text }]}>
+            {userData?.totalTime ?? 0} min
+          </Text>
+          <Text style={[styles.statLabel, { color: colors.muted }]}>
+            Tiempo
+          </Text>
         </View>
 
-        <View style={styles.statCard}>
+        <View
+          style={[
+            styles.statCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <Ionicons name="trophy-outline" size={24} color="#4da6ff" />
-          <Text style={styles.statNumber}>{userData?.level ?? 1}</Text>
-          <Text style={styles.statLabel}>Nivel</Text>
+          <Text style={[styles.statNumber, { color: colors.text }]}>
+            {userData?.level ?? 1}
+          </Text>
+          <Text style={[styles.statLabel, { color: colors.muted }]}>
+            Nivel
+          </Text>
         </View>
       </View>
 
       <View style={styles.options}>
         <Pressable
-          style={styles.option}
+          style={[
+            styles.option,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
           onPress={() => router.push({ pathname: "/edit-profile" } as any)}
         >
-          <Ionicons name="person-outline" size={20} color="white" />
-          <Text style={styles.optionText}>Editar perfil</Text>
+          <Ionicons
+            name="person-outline"
+            size={20}
+            color={isDark ? "white" : "#07111F"}
+          />
+          <Text style={[styles.optionText, { color: colors.text }]}>
+            Editar perfil
+          </Text>
         </Pressable>
 
         <Pressable
-          style={styles.option}
+          style={[
+            styles.option,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
           onPress={() => router.push({ pathname: "/settings" } as any)}
         >
-          <Ionicons name="settings-outline" size={20} color="white" />
-          <Text style={styles.optionText}>Configuración</Text>
+          <Ionicons
+            name="settings-outline"
+            size={20}
+            color={isDark ? "white" : "#07111F"}
+          />
+          <Text style={[styles.optionText, { color: colors.text }]}>
+            Configuración
+          </Text>
         </Pressable>
 
-        <Pressable style={styles.option} onPress={handleLogout}>
+        <Pressable
+          style={[
+            styles.option,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+          onPress={handleLogout}
+        >
           <Ionicons name="log-out-outline" size={20} color="#ff4d4d" />
           <Text style={[styles.optionText, { color: "#ff4d4d" }]}>
             Cerrar sesión
@@ -140,7 +218,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#070A0F",
   },
 
   header: {
@@ -154,6 +231,7 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     marginBottom: 12,
+    borderWidth: 2,
   },
 
   defaultAvatar: {
@@ -161,15 +239,12 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     marginBottom: 12,
-    backgroundColor: "rgba(255,255,255,0.15)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#ffffff",
   },
 
   name: {
-    color: "white",
     fontSize: 24,
     fontWeight: "bold",
   },
@@ -182,22 +257,20 @@ const styles = StyleSheet.create({
 
   statCard: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
     marginHorizontal: 5,
     padding: 15,
     borderRadius: 15,
     alignItems: "center",
+    borderWidth: 1.2,
   },
 
   statNumber: {
-    color: "white",
     fontSize: 18,
     fontWeight: "bold",
     marginTop: 5,
   },
 
   statLabel: {
-    color: "#aaa",
     fontSize: 12,
   },
 
@@ -208,14 +281,13 @@ const styles = StyleSheet.create({
   option: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
     padding: 15,
     borderRadius: 12,
     marginBottom: 12,
+    borderWidth: 1.2,
   },
 
   optionText: {
-    color: "white",
     marginLeft: 10,
     fontSize: 16,
   },

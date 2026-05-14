@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../firebaseConfig";
 import { useFocusEffect } from "@react-navigation/native";
+import { useTheme } from "../../themeContext";
 
 type LastWorkout = {
   id?: string;
@@ -25,6 +26,22 @@ type LastWorkout = {
 export default function TrainHubScreen() {
   const [lastWorkout, setLastWorkout] = useState<LastWorkout | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const { isDark } = useTheme();
+
+  const colors = {
+    bg: isDark ? "#070A0F" : "#F3F6FB",
+    text: isDark ? "#FFFFFF" : "#07111F",
+    muted: isDark ? "rgba(255,255,255,0.72)" : "rgba(7,17,31,0.68)",
+    card: isDark ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.92)",
+    orangeBorder: isDark
+      ? "rgba(255,122,0,0.55)"
+      : "rgba(255,122,0,0.35)",
+    blueBorder: isDark
+      ? "rgba(46,139,255,0.55)"
+      : "rgba(46,139,255,0.35)",
+    softBg: isDark ? "rgba(255,255,255,0.08)" : "rgba(7,17,31,0.06)",
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -81,33 +98,69 @@ export default function TrainHubScreen() {
   return (
     <ImageBackground
       source={require("../../assets/images/ring-bg.png")}
-      style={styles.bg}
+      style={[styles.bg, { backgroundColor: colors.bg }]}
       resizeMode="cover"
-      imageStyle={{ opacity: 0.38 }}
+      imageStyle={{ opacity: isDark ? 0.38 : 0.14 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.topBar}>
-          <Text style={styles.title}>Entrenar</Text>
+          <Text style={[styles.title, { color: colors.text }]}>
+            Entrenar
+          </Text>
+
           <Ionicons name="barbell-outline" size={28} color="#FF7A00" />
         </View>
 
         {loading ? (
-          <View style={styles.loadingWrap}>
+          <View
+            style={[
+              styles.loadingWrap,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.orangeBorder,
+              },
+            ]}
+          >
             <ActivityIndicator size="large" color="#FF7A00" />
-            <Text style={styles.loadingText}>Cargando entrenamiento...</Text>
+
+            <Text style={[styles.loadingText, { color: colors.text }]}>
+              Cargando entrenamiento...
+            </Text>
           </View>
         ) : lastWorkout ? (
-          <Pressable style={styles.mainCard} onPress={goToLastWorkoutDetail}>
+          <Pressable
+            style={[
+              styles.mainCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.orangeBorder,
+              },
+            ]}
+            onPress={goToLastWorkoutDetail}
+          >
             <View style={styles.mainCardTextWrap}>
-              <Text style={styles.mainCardSmall}>Último entrenamiento realizado</Text>
-              <Text style={styles.mainCardTitle}>{lastWorkout.title}</Text>
-              <Text style={styles.mainCardInfo}>
+              <Text
+                style={[styles.mainCardSmall, { color: colors.muted }]}
+              >
+                Último entrenamiento realizado
+              </Text>
+
+              <Text
+                style={[styles.mainCardTitle, { color: colors.text }]}
+              >
+                {lastWorkout.title}
+              </Text>
+
+              <Text
+                style={[styles.mainCardInfo, { color: colors.muted }]}
+              >
                 {(lastWorkout.roundsCount || 0) > 0
                   ? `${lastWorkout.roundsCount} rondas`
                   : "Rondas por definir"}{" "}
                 · {lastWorkout.estimatedMinutes || 0} min ·{" "}
                 {lastWorkout.level
-                  ? lastWorkout.level.charAt(0).toUpperCase() + lastWorkout.level.slice(1)
+                  ? lastWorkout.level.charAt(0).toUpperCase() +
+                    lastWorkout.level.slice(1)
                   : "Básico"}
               </Text>
             </View>
@@ -117,10 +170,25 @@ export default function TrainHubScreen() {
             </View>
           </Pressable>
         ) : (
-          <View style={styles.emptyTopCard}>
+          <View
+            style={[
+              styles.emptyTopCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.orangeBorder,
+              },
+            ]}
+          >
             <View style={styles.emptyTopLeft}>
-              <Text style={styles.mainCardSmall}>Último entrenamiento realizado</Text>
-              <Text style={styles.emptyTopTitle}>
+              <Text
+                style={[styles.mainCardSmall, { color: colors.muted }]}
+              >
+                Último entrenamiento realizado
+              </Text>
+
+              <Text
+                style={[styles.emptyTopTitle, { color: colors.text }]}
+              >
                 Aún no has realizado ningún entrenamiento
               </Text>
             </View>
@@ -131,43 +199,135 @@ export default function TrainHubScreen() {
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>Accesos rápidos</Text>
+        <Text
+          style={[styles.sectionTitle, { color: colors.text }]}
+        >
+          Accesos rápidos
+        </Text>
 
         <View style={styles.grid}>
           <Pressable
-            style={[styles.card, styles.blueCard]}
-            onPress={() => router.push({ pathname: "/offline-workouts" } as any)}
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.blueBorder,
+              },
+            ]}
+            onPress={() =>
+              router.push({ pathname: "/offline-workouts" } as any)
+            }
           >
-            <Ionicons name="download-outline" size={30} color="#2E8BFF" />
-            <Text style={styles.cardTitle}>Descargados</Text>
-            <Text style={styles.cardText}>Entrena sin conexión</Text>
+            <Ionicons
+              name="download-outline"
+              size={30}
+              color="#2E8BFF"
+            />
+
+            <Text
+              style={[styles.cardTitle, { color: colors.text }]}
+            >
+              Descargados
+            </Text>
+
+            <Text
+              style={[styles.cardText, { color: colors.muted }]}
+            >
+              Entrena sin conexión
+            </Text>
           </Pressable>
 
           <Pressable
-            style={[styles.card, styles.orangeCard]}
-            onPress={() => router.push({ pathname: "/favorites" } as any)}
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.orangeBorder,
+              },
+            ]}
+            onPress={() =>
+              router.push({ pathname: "/favorites" } as any)
+            }
           >
-            <Ionicons name="heart-outline" size={30} color="#FF7A00" />
-            <Text style={styles.cardTitle}>Favoritos</Text>
-            <Text style={styles.cardText}>Tus rutinas guardadas</Text>
+            <Ionicons
+              name="heart-outline"
+              size={30}
+              color="#FF7A00"
+            />
+
+            <Text
+              style={[styles.cardTitle, { color: colors.text }]}
+            >
+              Favoritos
+            </Text>
+
+            <Text
+              style={[styles.cardText, { color: colors.muted }]}
+            >
+              Tus rutinas guardadas
+            </Text>
           </Pressable>
 
           <Pressable
-            style={[styles.card, styles.blueCard]}
-            onPress={() => router.push({ pathname: "/my-workouts" } as any)}
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.blueBorder,
+              },
+            ]}
+            onPress={() =>
+              router.push({ pathname: "/my-workouts" } as any)
+            }
           >
-            <Ionicons name="create-outline" size={30} color="#2E8BFF" />
-            <Text style={styles.cardTitle}>Mis entrenos</Text>
-            <Text style={styles.cardText}>Rutinas creadas por ti</Text>
+            <Ionicons
+              name="create-outline"
+              size={30}
+              color="#2E8BFF"
+            />
+
+            <Text
+              style={[styles.cardTitle, { color: colors.text }]}
+            >
+              Mis entrenos
+            </Text>
+
+            <Text
+              style={[styles.cardText, { color: colors.muted }]}
+            >
+              Rutinas creadas por ti
+            </Text>
           </Pressable>
 
           <Pressable
-            style={[styles.card, styles.orangeCard]}
-            onPress={() => router.push({ pathname: "/workouts" } as any)}
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.orangeBorder,
+              },
+            ]}
+            onPress={() =>
+              router.push({ pathname: "/workouts" } as any)
+            }
           >
-            <Ionicons name="albums-outline" size={30} color="#FF7A00" />
-            <Text style={styles.cardTitle}>Entrenos app</Text>
-            <Text style={styles.cardText}>Rutinas incluidas en ShadowBox</Text>
+            <Ionicons
+              name="albums-outline"
+              size={30}
+              color="#FF7A00"
+            />
+
+            <Text
+              style={[styles.cardTitle, { color: colors.text }]}
+            >
+              Entrenos app
+            </Text>
+
+            <Text
+              style={[styles.cardText, { color: colors.muted }]}
+            >
+              Rutinas incluidas en ShadowBox
+            </Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -178,7 +338,6 @@ export default function TrainHubScreen() {
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
-    backgroundColor: "#070A0F",
   },
 
   container: {
@@ -195,30 +354,26 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: "#fff",
     fontSize: 30,
     fontWeight: "900",
   },
 
   loadingWrap: {
-    backgroundColor: "rgba(0,0,0,0.62)",
     borderRadius: 22,
     padding: 24,
     alignItems: "center",
     marginBottom: 24,
+    borderWidth: 1.5,
   },
 
   loadingText: {
-    color: "white",
     marginTop: 12,
     fontWeight: "700",
   },
 
   mainCard: {
-    backgroundColor: "rgba(0,0,0,0.72)",
     borderRadius: 24,
     borderWidth: 2,
-    borderColor: "rgba(255,122,0,0.55)",
     padding: 20,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -231,10 +386,8 @@ const styles = StyleSheet.create({
   },
 
   emptyTopCard: {
-    backgroundColor: "rgba(0,0,0,0.72)",
     borderRadius: 24,
     borderWidth: 2,
-    borderColor: "rgba(255,122,0,0.35)",
     padding: 20,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -248,17 +401,10 @@ const styles = StyleSheet.create({
   },
 
   emptyTopTitle: {
-    color: "#fff",
     fontSize: 22,
     fontWeight: "900",
     marginBottom: 8,
     lineHeight: 28,
-  },
-
-  emptyTopText: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 14,
-    lineHeight: 20,
   },
 
   emptyPlayCircle: {
@@ -276,20 +422,17 @@ const styles = StyleSheet.create({
   },
 
   mainCardSmall: {
-    color: "rgba(255,255,255,0.65)",
     fontSize: 14,
     marginBottom: 6,
   },
 
   mainCardTitle: {
-    color: "#fff",
     fontSize: 22,
     fontWeight: "900",
     marginBottom: 8,
   },
 
   mainCardInfo: {
-    color: "rgba(255,255,255,0.78)",
     fontSize: 15,
     lineHeight: 20,
   },
@@ -304,7 +447,6 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    color: "#fff",
     fontSize: 18,
     fontWeight: "800",
     marginBottom: 14,
@@ -322,31 +464,19 @@ const styles = StyleSheet.create({
     width: "48%",
     minHeight: 150,
     borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.6)",
     padding: 16,
     marginBottom: 14,
     justifyContent: "space-between",
-  },
-
-  blueCard: {
     borderWidth: 2,
-    borderColor: "rgba(46,139,255,0.55)",
-  },
-
-  orangeCard: {
-    borderWidth: 2,
-    borderColor: "rgba(255,122,0,0.55)",
   },
 
   cardTitle: {
-    color: "#fff",
     fontSize: 17,
     fontWeight: "800",
     marginTop: 12,
   },
 
   cardText: {
-    color: "rgba(255,255,255,0.72)",
     fontSize: 13,
     marginTop: 6,
     lineHeight: 18,

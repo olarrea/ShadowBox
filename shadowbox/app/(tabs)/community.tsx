@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { auth, db } from "../../firebaseConfig";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { useTheme } from "../../themeContext";
 
 type Workout = {
   id: string;
@@ -27,6 +28,19 @@ type Workout = {
 export default function CommunityScreen() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isDark } = useTheme();
+
+  const colors = {
+    bg: isDark ? "#070A0F" : "#F3F6FB",
+    text: isDark ? "#FFFFFF" : "#07111F",
+    muted: isDark ? "rgba(255,255,255,0.68)" : "rgba(7,17,31,0.65)",
+    card: isDark ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.92)",
+    cardSoft: isDark ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.9)",
+    blueBorder: isDark ? "rgba(46,139,255,0.45)" : "rgba(46,139,255,0.35)",
+    orangeBorder: isDark ? "rgba(255,122,0,0.45)" : "rgba(255,122,0,0.38)",
+    avatarBg: isDark ? "rgba(255,255,255,0.10)" : "rgba(7,17,31,0.08)",
+    badgeBg: isDark ? "rgba(255,255,255,0.08)" : "rgba(7,17,31,0.08)",
+  };
 
   useEffect(() => {
     loadCommunityWorkouts();
@@ -64,8 +78,7 @@ export default function CommunityScreen() {
 
               return {
                 ...workout,
-                createdByName:
-                  userData.name || userData.email || "Usuario",
+                createdByName: userData.name || userData.email || "Usuario",
               };
             }
 
@@ -95,15 +108,25 @@ export default function CommunityScreen() {
   return (
     <ImageBackground
       source={require("../../assets/images/ring-bg.png")}
-      style={styles.bg}
+      style={[styles.bg, { backgroundColor: colors.bg }]}
       resizeMode="cover"
-      imageStyle={{ opacity: 0.65 }}
+      imageStyle={{ opacity: isDark ? 0.65 : 0.15 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Comunidad</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Comunidad</Text>
 
-          <View style={styles.headerIcon}>
+          <View
+            style={[
+              styles.headerIcon,
+              {
+                backgroundColor: isDark
+                  ? "rgba(0,0,0,0.45)"
+                  : "rgba(255,255,255,0.9)",
+                borderColor: colors.blueBorder,
+              },
+            ]}
+          >
             <Ionicons name="people" size={18} color="#FF7A00" />
           </View>
         </View>
@@ -111,30 +134,52 @@ export default function CommunityScreen() {
         {loading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="large" color="#FF7A00" />
-            <Text style={styles.loadingText}>
+            <Text style={[styles.loadingText, { color: colors.text }]}>
               Cargando entrenamientos...
             </Text>
           </View>
         ) : workouts.length === 0 ? (
-          <View style={styles.emptyCard}>
+          <View
+            style={[
+              styles.emptyCard,
+              {
+                backgroundColor: colors.cardSoft,
+                borderColor: colors.blueBorder,
+              },
+            ]}
+          >
             <Ionicons name="people-outline" size={34} color="#2E8BFF" />
 
-            <Text style={styles.emptyTitle}>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
               Aún no hay entrenamientos compartidos
             </Text>
 
-            <Text style={styles.emptyText}>
+            <Text style={[styles.emptyText, { color: colors.muted }]}>
               Cuando otros usuarios creen entrenamientos aparecerán aquí.
             </Text>
           </View>
         ) : (
           workouts.map((workout) => (
-            <View key={workout.id} style={styles.card}>
+            <View
+              key={workout.id}
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.blueBorder,
+                },
+              ]}
+            >
               <View style={styles.cardTopRow}>
                 <View style={styles.avatarWrap}>
-                  <View style={styles.avatarRing}>
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarText}>
+                  <View style={[styles.avatarRing, { borderColor: "#FF7A00" }]}>
+                    <View
+                      style={[
+                        styles.avatar,
+                        { backgroundColor: colors.avatarBg },
+                      ]}
+                    >
+                      <Text style={[styles.avatarText, { color: colors.text }]}>
                         {(workout.createdByName || "U")
                           .slice(0, 1)
                           .toUpperCase()}
@@ -144,42 +189,50 @@ export default function CommunityScreen() {
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>
+                  <Text style={[styles.cardTitle, { color: colors.text }]}>
                     {workout.title}
                   </Text>
 
-                  <Text style={styles.authorText}>
+                  <Text style={[styles.authorText, { color: colors.muted }]}>
                     por {workout.createdByName || "Usuario"}
                   </Text>
 
                   <View style={styles.badgeRow}>
                     <View style={styles.levelBadge}>
-                      <Text style={styles.levelBadgeText}>
-                        {workout.level}
-                      </Text>
+                      <Text style={styles.levelBadgeText}>{workout.level}</Text>
                     </View>
 
-                    <View style={styles.infoBadge}>
-                      <Text style={styles.infoBadgeText}>
+                    <View
+                      style={[
+                        styles.infoBadge,
+                        { backgroundColor: colors.badgeBg },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.infoBadgeText, { color: colors.text }]}
+                      >
                         {workout.estimatedMinutes} min
                       </Text>
                     </View>
 
-                    <View style={styles.infoBadge}>
-                      <Text style={styles.infoBadgeText}>
+                    <View
+                      style={[
+                        styles.infoBadge,
+                        { backgroundColor: colors.badgeBg },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.infoBadgeText, { color: colors.text }]}
+                      >
                         {workout.rounds?.length || 0} rondas
                       </Text>
                     </View>
                   </View>
 
                   <View style={styles.ratingRow}>
-                    <Ionicons
-                      name="star"
-                      size={16}
-                      color="#FF7A00"
-                    />
+                    <Ionicons name="star" size={16} color="#FF7A00" />
 
-                    <Text style={styles.ratingText}>
+                    <Text style={[styles.ratingText, { color: colors.text }]}>
                       {workout.averageRating || 0}/5
                     </Text>
                   </View>
@@ -190,9 +243,7 @@ export default function CommunityScreen() {
                 style={styles.btn}
                 onPress={() => openWorkout(workout.id)}
               >
-                <Text style={styles.btnText}>
-                  VER ENTRENAMIENTO
-                </Text>
+                <Text style={styles.btnText}>VER ENTRENAMIENTO</Text>
               </Pressable>
             </View>
           ))
@@ -205,7 +256,6 @@ export default function CommunityScreen() {
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
-    backgroundColor: "#070A0F",
   },
 
   container: {
@@ -222,7 +272,6 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: "#FFFFFF",
     fontSize: 34,
     fontWeight: "900",
   },
@@ -232,8 +281,6 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     borderWidth: 2,
-    borderColor: "rgba(46,139,255,0.65)",
-    backgroundColor: "rgba(0,0,0,0.45)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -244,22 +291,18 @@ const styles = StyleSheet.create({
   },
 
   loadingText: {
-    color: "white",
     marginTop: 12,
     fontWeight: "700",
   },
 
   emptyCard: {
-    backgroundColor: "rgba(0,0,0,0.65)",
     borderRadius: 22,
     padding: 24,
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "rgba(46,139,255,0.35)",
   },
 
   emptyTitle: {
-    color: "white",
     fontSize: 18,
     fontWeight: "800",
     marginTop: 12,
@@ -268,16 +311,13 @@ const styles = StyleSheet.create({
   },
 
   emptyText: {
-    color: "rgba(255,255,255,0.72)",
     textAlign: "center",
     lineHeight: 20,
   },
 
   card: {
     borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.50)",
     borderWidth: 2,
-    borderColor: "rgba(46,139,255,0.45)",
     padding: 16,
     marginBottom: 16,
   },
@@ -298,7 +338,6 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     borderWidth: 3,
-    borderColor: "#FF7A00",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -307,25 +346,21 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: "rgba(255,255,255,0.10)",
     alignItems: "center",
     justifyContent: "center",
   },
 
   avatarText: {
-    color: "#FFFFFF",
     fontWeight: "900",
     fontSize: 18,
   },
 
   cardTitle: {
-    color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "900",
   },
 
   authorText: {
-    color: "rgba(255,255,255,0.65)",
     marginTop: 4,
   },
 
@@ -355,13 +390,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     height: 24,
     borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.08)",
     alignItems: "center",
     justifyContent: "center",
   },
 
   infoBadgeText: {
-    color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 12,
   },
@@ -374,7 +407,6 @@ const styles = StyleSheet.create({
   },
 
   ratingText: {
-    color: "#FFFFFF",
     fontWeight: "700",
   },
 

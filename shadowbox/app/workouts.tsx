@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { router } from "expo-router";
+import { useTheme } from "../themeContext";
 
 type Workout = {
   id: string;
@@ -24,6 +25,16 @@ type Workout = {
 export default function WorkoutsScreen() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const { isDark } = useTheme();
+
+  const colors = {
+    bg: isDark ? "#070A0F" : "#F3F6FB",
+    text: isDark ? "#FFFFFF" : "#07111F",
+    muted: isDark ? "rgba(255,255,255,0.72)" : "rgba(7,17,31,0.68)",
+    card: isDark ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.92)",
+    border: isDark ? "rgba(255,122,0,0.4)" : "rgba(255,122,0,0.35)",
+  };
 
   useEffect(() => {
     loadWorkouts();
@@ -54,11 +65,14 @@ export default function WorkoutsScreen() {
   return (
     <ImageBackground
       source={require("../assets/images/ring-bg.png")}
-      style={styles.bg}
-      imageStyle={{ opacity: 0.38 }}
+      style={[styles.bg, { backgroundColor: colors.bg }]}
+      resizeMode="cover"
+      imageStyle={{ opacity: isDark ? 0.38 : 0.15 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Entrenamientos</Text>
+        <Text style={[styles.title, { color: colors.text }]}>
+          Entrenamientos
+        </Text>
 
         {loading ? (
           <ActivityIndicator size="large" color="#FF7A00" />
@@ -66,12 +80,21 @@ export default function WorkoutsScreen() {
           workouts.map((w) => (
             <Pressable
               key={w.id}
-              style={styles.card}
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                },
+              ]}
               onPress={() => openWorkout(w.id)}
             >
-              <View>
-                <Text style={styles.cardTitle}>{w.title}</Text>
-                <Text style={styles.cardInfo}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>
+                  {w.title}
+                </Text>
+
+                <Text style={[styles.cardInfo, { color: colors.muted }]}>
                   {w.rounds?.length || 0} rondas · {w.estimatedMinutes} min ·{" "}
                   {w.level}
                 </Text>
@@ -89,20 +112,21 @@ export default function WorkoutsScreen() {
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
-    backgroundColor: "#070A0F",
   },
+
   container: {
     padding: 20,
     paddingTop: 60,
+    paddingBottom: 30,
   },
+
   title: {
-    color: "white",
     fontSize: 28,
     fontWeight: "900",
     marginBottom: 20,
   },
+
   card: {
-    backgroundColor: "rgba(0,0,0,0.7)",
     borderRadius: 18,
     padding: 18,
     marginBottom: 14,
@@ -110,15 +134,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "rgba(255,122,0,0.4)",
   },
+
   cardTitle: {
-    color: "white",
     fontSize: 18,
     fontWeight: "800",
   },
+
   cardInfo: {
-    color: "rgba(255,255,255,0.7)",
     marginTop: 6,
   },
 });
