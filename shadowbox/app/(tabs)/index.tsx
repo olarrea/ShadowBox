@@ -5,6 +5,8 @@ import {
   StyleSheet,
   ImageBackground,
   Pressable,
+  ScrollView,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -47,82 +49,92 @@ export default function HomeScreen() {
   return (
     <ImageBackground
       source={require("../../assets/images/ring-bg.png")}
-      style={styles.container}
+      style={styles.bg}
       resizeMode="cover"
       imageStyle={{ opacity: 0.65 }}
     >
-      <View style={styles.profileCard}>
-        <View style={styles.avatar}>
-          <Ionicons name="person" size={34} color="#FFFFFF" />
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.profileCard}>
+          {userData?.photo ? (
+            <Image source={{ uri: userData.photo }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <Ionicons name="person" size={34} color="#FFFFFF" />
+            </View>
+          )}
+
+          <View style={{ flex: 1 }}>
+            <Text style={styles.name} numberOfLines={1}>
+              {userData?.name || userData?.email || "Usuario"}
+            </Text>
+            <Text style={styles.level}>Nivel {userData?.level || 1}</Text>
+          </View>
         </View>
 
-        <View>
-          <Text style={styles.name}>
-            {userData?.name || userData?.email || "Usuario"}
+        <View style={styles.infoCard}>
+          <Text style={styles.infoTitle}>¿Qué es ShadowBox?</Text>
+
+          <Text style={styles.infoText}>
+            ShadowBox es una aplicación móvil diseñada para entrenar boxeo en casa
+            de forma estructurada, accesible y motivadora.
           </Text>
-          <Text style={styles.level}>Nivel {userData?.level || 1}</Text>
+
+          <Text style={styles.infoText}>
+            Puedes seguir entrenamientos, crear tus propias rutinas, guardar tus
+            favoritos, descargar sesiones y consultar tu progreso personal.
+          </Text>
+
+          <Text style={styles.infoText}>
+            Su objetivo es ayudarte a mejorar técnica, resistencia y constancia
+            mediante planes claros y entrenamientos adaptados a tu nivel.
+          </Text>
         </View>
-      </View>
 
-      <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>¿Qué es ShadowBox?</Text>
+        <Pressable
+          style={styles.createButton}
+          onPress={() => router.push({ pathname: "/create-workout" } as any)}
+        >
+          <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
+          <Text style={styles.createButtonText}>Crear entrenamiento</Text>
+        </Pressable>
 
-        <Text style={styles.infoText}>
-          ShadowBox es una aplicación móvil diseñada para entrenar boxeo en casa
-          de forma estructurada, accesible y motivadora.
-        </Text>
+        <Pressable
+          style={styles.generateButton}
+          onPress={() => router.push({ pathname: "/generate" } as any)}
+        >
+          <Ionicons name="navigate-outline" size={22} color="#FFFFFF" />
+          <Text style={styles.generateButtonText}>Generar plan</Text>
+        </Pressable>
 
-        <Text style={styles.infoText}>
-          Puedes seguir entrenamientos, crear tus propias rutinas, guardar tus
-          favoritos, descargar sesiones y consultar tu progreso personal.
-        </Text>
+        <Pressable
+          style={styles.progressButton}
+          onPress={() => router.push({ pathname: "/progress" } as any)}
+        >
+          <Ionicons name="bar-chart-outline" size={22} color="#FFFFFF" />
+          <Text style={styles.progressButtonText}>Ver progreso</Text>
+        </Pressable>
 
-        <Text style={styles.infoText}>
-          Su objetivo es ayudarte a mejorar técnica, resistencia y constancia
-          mediante planes claros y entrenamientos adaptados a tu nivel.
-        </Text>
-      </View>
-
-      <Pressable
-        style={styles.createButton}
-        onPress={() => router.push({ pathname: "/create-workout" } as any)}
-      >
-        <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
-        <Text style={styles.createButtonText}>Crear entrenamiento</Text>
-      </Pressable>
-
-      <Pressable
-        style={styles.generateButton}
-        onPress={() => router.push({ pathname: "/generate" } as any)}
-      >
-        <Ionicons name="navigate-outline" size={22} color="#FFFFFF" />
-        <Text style={styles.generateButtonText}>Generar plan</Text>
-      </Pressable>
-
-      <Pressable
-        style={styles.progressButton}
-        onPress={() => router.push({ pathname: "/progress" } as any)}
-      >
-        <Ionicons name="bar-chart-outline" size={22} color="#FFFFFF" />
-        <Text style={styles.progressButtonText}>Ver progreso</Text>
-      </Pressable>
-
-      <View style={styles.motivationCard}>
-        <Ionicons name="flash-outline" size={22} color="#FF7A00" />
-        <Text style={styles.motivationText}>
-          “El campeón se construye ronda a ronda.”
-        </Text>
-      </View>
+        <View style={styles.motivationCard}>
+          <Ionicons name="flash-outline" size={22} color="#FF7A00" />
+          <Text style={styles.motivationText}>
+            “El campeón se construye ronda a ronda.”
+          </Text>
+        </View>
+      </ScrollView>
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  bg: {
     flex: 1,
+    backgroundColor: "#070A0F",
+  },
+
+  container: {
     padding: 20,
     paddingTop: 58,
-    backgroundColor: "#070A0F",
+    paddingBottom: 36,
   },
 
   profileCard: {
@@ -148,11 +160,20 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
 
+  avatarImage: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    marginRight: 16,
+    backgroundColor: "rgba(255,255,255,0.12)",
+  },
+
   name: {
     color: "#FFFFFF",
     fontSize: 24,
     fontWeight: "900",
-    maxWidth: 230,
   },
 
   level: {
@@ -229,7 +250,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    marginBottom: 24,
+    marginBottom: 18,
   },
 
   progressButtonText: {
@@ -239,7 +260,6 @@ const styles = StyleSheet.create({
   },
 
   motivationCard: {
-    marginTop: "auto",
     backgroundColor: "rgba(0,0,0,0.62)",
     borderRadius: 20,
     padding: 18,
