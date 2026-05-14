@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import { ThemeProvider } from "../themeContext";
+import "../ignoreWarnings";
 
 export default function RootLayout() {
   return (

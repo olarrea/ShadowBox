@@ -64,6 +64,7 @@ export default function WorkoutDetailScreen() {
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
   const [userRating, setUserRating] = useState(0);
+  const isOwnWorkout = workout?.createdBy === auth.currentUser?.uid;
 
   useEffect(() => {
     if (workoutId) {
@@ -164,7 +165,15 @@ export default function WorkoutDetailScreen() {
         return;
       }
 
-      if (!workoutId) return;
+      if (!workoutId || !workout) return;
+
+      if (workout.createdBy === user.uid) {
+        Alert.alert(
+          "No disponible",
+          "No puedes valorar un entrenamiento creado por ti."
+        );
+        return;
+      }
 
       const ratingRef = doc(
         db,
@@ -464,23 +473,34 @@ export default function WorkoutDetailScreen() {
         </Pressable>
 
         <View style={styles.ratingCard}>
-          <Text style={styles.ratingTitle}>Valora este entrenamiento</Text>
+          {isOwnWorkout ? (
+            <>
+              <Text style={styles.ratingTitle}>Tu entrenamiento</Text>
+              <Text style={styles.ownerRatingText}>
+                Este entrenamiento ha sido creado por ti, por eso no puedes valorarlo.
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.ratingTitle}>Valora este entrenamiento</Text>
 
-          <View style={styles.starsRow}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Pressable key={star} onPress={() => rateWorkout(star)}>
-                <Ionicons
-                  name={star <= userRating ? "star" : "star-outline"}
-                  size={34}
-                  color="#FF7A00"
-                />
-              </Pressable>
-            ))}
-          </View>
+              <View style={styles.starsRow}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Pressable key={star} onPress={() => rateWorkout(star)}>
+                    <Ionicons
+                      name={star <= userRating ? "star" : "star-outline"}
+                      size={34}
+                      color="#FF7A00"
+                    />
+                  </Pressable>
+                ))}
+              </View>
 
-          <Text style={styles.averageText}>
-            Valoración media: {averageRating}/5
-          </Text>
+              <Text style={styles.averageText}>
+                Valoración media: {averageRating}/5
+              </Text>
+            </>
+          )}
         </View>
       </ScrollView>
     </ImageBackground>
@@ -772,6 +792,13 @@ const styles = StyleSheet.create({
 
   averageText: {
     color: "rgba(255,255,255,0.75)",
+    fontWeight: "700",
+  },
+
+  ownerRatingText: {
+    color: "rgba(255,255,255,0.72)",
+    textAlign: "center",
+    lineHeight: 20,
     fontWeight: "700",
   },
 });
