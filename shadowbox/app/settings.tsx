@@ -153,20 +153,6 @@ export default function SettingsScreen() {
             </View>
           </View>
         </View>
-
-        <Text
-          style={[
-            styles.note,
-            {
-              color: isDark
-                ? "rgba(255,255,255,0.62)"
-                : "rgba(7,17,31,0.62)",
-            },
-          ]}
-        >
-          El modo claro/oscuro ya queda preparado para extenderse al resto de
-          pantallas de ShadowBox.
-        </Text>
       </View>
     </ImageBackground>
   );

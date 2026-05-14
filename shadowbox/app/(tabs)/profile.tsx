@@ -72,7 +72,7 @@ export default function ProfileScreen() {
       source={require("../../assets/images/ring-bg.png")}
       style={styles.container}
       resizeMode="cover"
-      imageStyle={{ opacity: 0.7 }}
+      imageStyle={{ opacity: 0.38 }}
     >
       <View style={styles.header}>
         {userData?.photo ? (
@@ -140,6 +140,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: "#070A0F",
   },
 
   header: {

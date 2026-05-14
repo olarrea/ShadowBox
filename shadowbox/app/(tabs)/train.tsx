@@ -83,7 +83,7 @@ export default function TrainHubScreen() {
       source={require("../../assets/images/ring-bg.png")}
       style={styles.bg}
       resizeMode="cover"
-      imageStyle={{ opacity: 0.65 }}
+      imageStyle={{ opacity: 0.38 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.topBar}>

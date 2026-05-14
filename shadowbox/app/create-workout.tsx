@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
 type WorkoutRound = {
@@ -84,6 +84,15 @@ export default function CreateWorkoutScreen() {
         return;
       }
 
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.exists() ? userSnap.data() : null;
+
+      const createdByName =
+        userData?.name || user.displayName || user.email || "Usuario";
+
+      const createdByPhoto = userData?.photo || null;
+
       if (!title.trim() || !description.trim()) {
         Alert.alert("Error", "Completa el nombre y la descripción.");
         return;
@@ -118,6 +127,8 @@ export default function CreateWorkoutScreen() {
         level,
         estimatedMinutes: calculateEstimatedMinutes(),
         createdBy: user.uid,
+        createdByName,
+        createdByPhoto,
         rounds: parsedRounds,
         createdAt: new Date().toISOString(),
       });

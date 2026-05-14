@@ -55,7 +55,7 @@ export default function WorkoutsScreen() {
     <ImageBackground
       source={require("../assets/images/ring-bg.png")}
       style={styles.bg}
-      imageStyle={{ opacity: 0.65 }}
+      imageStyle={{ opacity: 0.38 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Entrenamientos</Text>
@@ -87,7 +87,10 @@ export default function WorkoutsScreen() {
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1 },
+  bg: {
+    flex: 1,
+    backgroundColor: "#070A0F",
+  },
   container: {
     padding: 20,
     paddingTop: 60,

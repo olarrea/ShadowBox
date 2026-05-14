@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { auth, db } from "../../firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 
 type Workout = {
   id: string;
@@ -38,20 +38,44 @@ export default function CommunityScreen() {
 
       const snap = await getDocs(collection(db, "workouts"));
 
-      const data = snap.docs
+      const baseData = snap.docs
         .map((docSnap) => ({
           id: docSnap.id,
           ...(docSnap.data() as Omit<Workout, "id">),
         }))
         .filter((workout) => {
-          // excluir entrenos del sistema
           if (workout.createdBy === "system") return false;
-
-          // excluir entrenos propios
           if (workout.createdBy === user?.uid) return false;
-
           return true;
         });
+
+      const data = await Promise.all(
+        baseData.map(async (workout) => {
+          if (workout.createdByName || !workout.createdBy) {
+            return workout;
+          }
+
+          try {
+            const userRef = doc(db, "users", workout.createdBy);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+              const userData = userSnap.data();
+
+              return {
+                ...workout,
+                createdByName:
+                  userData.name || userData.email || "Usuario",
+              };
+            }
+
+            return workout;
+          } catch (error) {
+            console.log("ERROR CARGANDO AUTOR:", error);
+            return workout;
+          }
+        })
+      );
 
       setWorkouts(data);
     } catch (error) {

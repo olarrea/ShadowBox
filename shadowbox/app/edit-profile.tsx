@@ -118,7 +118,7 @@ export default function EditProfileScreen() {
       source={require("../assets/images/ring-bg.png")}
       style={styles.container}
       resizeMode="cover"
-      imageStyle={{ opacity: 0.7 }}
+      imageStyle={{ opacity: 0.38 }}
     >
       <KeyboardAvoidingView
         style={styles.keyboard}
@@ -186,6 +186,7 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#070A0F",
   },
   keyboard: {
     flex: 1,
