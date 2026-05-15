@@ -81,9 +81,9 @@ export default function NotificationsSettingsScreen() {
           body: "Completa una sesión hoy y sigue sumando progreso en ShadowBox.",
         },
         trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
           hour: 20,
           minute: 0,
-          repeats: true,
         } as any,
       });
 
@@ -254,10 +254,6 @@ export default function NotificationsSettingsScreen() {
             </>
           )}
         </View>
-
-        <Text style={[styles.note, { color: colors.muted }]}>
-          Más adelante podrás elegir la hora exacta desde configuración.
-        </Text>
       </View>
     </ImageBackground>
   );

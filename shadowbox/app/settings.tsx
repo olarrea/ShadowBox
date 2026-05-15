@@ -90,7 +90,9 @@ export default function SettingsScreen() {
             onPress={() => setTheme("dark")}
           >
             <Ionicons name="moon-outline" size={22} color="white" />
+
             <Text style={styles.themeOptionText}>Modo oscuro</Text>
+
             {theme === "dark" && (
               <Ionicons name="checkmark-circle" size={22} color="white" />
             )}
@@ -105,10 +107,69 @@ export default function SettingsScreen() {
             onPress={() => setTheme("light")}
           >
             <Ionicons name="sunny-outline" size={22} color="white" />
+
             <Text style={styles.themeOptionText}>Modo claro</Text>
+
             {theme === "light" && (
               <Ionicons name="checkmark-circle" size={22} color="white" />
             )}
+          </Pressable>
+        </View>
+
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: isDark
+                ? "rgba(0,0,0,0.62)"
+                : "rgba(255,255,255,0.88)",
+              borderColor: isDark
+                ? "rgba(255,122,0,0.28)"
+                : "rgba(255,122,0,0.28)",
+            },
+          ]}
+        >
+          <Pressable
+            style={styles.settingHeader}
+            onPress={() =>
+              router.push({ pathname: "/notifications-settings" } as any)
+            }
+          >
+            <Ionicons
+              name="notifications-outline"
+              size={30}
+              color="#FF7A00"
+            />
+
+            <View style={{ flex: 1 }}>
+              <Text
+                style={[
+                  styles.settingTitle,
+                  { color: isDark ? "white" : "#07111F" },
+                ]}
+              >
+                Notificaciones
+              </Text>
+
+              <Text
+                style={[
+                  styles.settingText,
+                  {
+                    color: isDark
+                      ? "rgba(255,255,255,0.68)"
+                      : "rgba(7,17,31,0.65)",
+                  },
+                ]}
+              >
+                Activa recordatorios diarios para entrenar.
+              </Text>
+            </View>
+
+            <Ionicons
+              name="chevron-forward"
+              size={22}
+              color={isDark ? "white" : "#07111F"}
+            />
           </Pressable>
         </View>
 
@@ -192,7 +253,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    marginBottom: 18,
   },
 
   settingTitle: {
@@ -215,7 +275,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    marginBottom: 12,
+    marginTop: 18,
   },
 
   themeOptionBlue: {
@@ -237,11 +297,5 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     flex: 1,
     marginLeft: 10,
-  },
-
-  note: {
-    textAlign: "center",
-    lineHeight: 20,
-    marginTop: 4,
   },
 });
