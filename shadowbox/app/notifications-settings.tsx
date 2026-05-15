@@ -14,12 +14,14 @@ import * as Notifications from "expo-notifications";
 import { auth, db } from "../firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 
 export default function NotificationsSettingsScreen() {
   const [loading, setLoading] = useState(false);
   const [enabled, setEnabled] = useState(false);
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -67,8 +69,8 @@ export default function NotificationsSettingsScreen() {
 
       if (!permission.granted) {
         Alert.alert(
-          "Permiso necesario",
-          "Debes permitir las notificaciones para activar los recordatorios."
+          t("permissionRequired"),
+          t("notificationPermissionRequired")
         );
         return;
       }
@@ -77,8 +79,8 @@ export default function NotificationsSettingsScreen() {
 
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: "Hora de entrenar 🥊",
-          body: "Completa una sesión hoy y sigue sumando progreso en ShadowBox.",
+          title: t("trainingTime"),
+          body: t("dailyTrainingReminder"),
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -100,12 +102,16 @@ export default function NotificationsSettingsScreen() {
       setEnabled(true);
 
       Alert.alert(
-        "Recordatorios activados",
-        "Te avisaremos todos los días a las 20:00 para entrenar."
+        t("remindersEnabled"),
+        t("dailyReminderEnabled")
       );
     } catch (error) {
       console.log("ERROR ACTIVANDO NOTIFICACIONES:", error);
-      Alert.alert("Error", "No se pudieron activar las notificaciones.");
+
+      Alert.alert(
+        t("genericError"),
+        t("notificationsEnableError")
+      );
     } finally {
       setLoading(false);
     }
@@ -128,12 +134,16 @@ export default function NotificationsSettingsScreen() {
       setEnabled(false);
 
       Alert.alert(
-        "Recordatorios desactivados",
-        "Ya no recibirás avisos diarios."
+        t("remindersDisabled"),
+        t("dailyReminderDisabled")
       );
     } catch (error) {
       console.log("ERROR DESACTIVANDO NOTIFICACIONES:", error);
-      Alert.alert("Error", "No se pudieron desactivar las notificaciones.");
+
+      Alert.alert(
+        t("genericError"),
+        t("notificationsDisableError")
+      );
     } finally {
       setLoading(false);
     }
@@ -157,7 +167,7 @@ export default function NotificationsSettingsScreen() {
           </Pressable>
 
           <Text style={[styles.title, { color: colors.text }]}>
-            Notificaciones
+            {t("notifications")}
           </Text>
 
           <View style={{ width: 26 }} />
@@ -179,12 +189,11 @@ export default function NotificationsSettingsScreen() {
           />
 
           <Text style={[styles.cardTitle, { color: colors.text }]}>
-            Recordatorios inteligentes
+            {t("smartReminders")}
           </Text>
 
           <Text style={[styles.cardText, { color: colors.muted }]}>
-            ShadowBox puede enviarte un aviso diario para ayudarte a mantener la
-            constancia y no saltarte tus entrenamientos.
+            {t("smartRemindersDescription")}
           </Text>
 
           <View style={styles.statusRow}>
@@ -198,12 +207,12 @@ export default function NotificationsSettingsScreen() {
             />
 
             <Text style={[styles.statusText, { color: colors.text }]}>
-              {enabled ? "Activadas" : "Desactivadas"}
+              {enabled ? t("enabled") : t("disabled")}
             </Text>
           </View>
 
           <Text style={styles.timeText}>
-            Hora configurada: 20:00
+            {t("configuredTime")}: 20:00
           </Text>
 
           {loading ? (
@@ -225,7 +234,7 @@ export default function NotificationsSettingsScreen() {
                 />
 
                 <Text style={styles.btnText}>
-                  Activar recordatorio
+                  {t("enableReminder")}
                 </Text>
               </Pressable>
 
@@ -248,7 +257,7 @@ export default function NotificationsSettingsScreen() {
                     { color: colors.text },
                   ]}
                 >
-                  Desactivar recordatorio
+                  {t("disableReminder")}
                 </Text>
               </Pressable>
             </>

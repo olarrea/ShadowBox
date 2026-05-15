@@ -14,6 +14,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../firebaseConfig";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../../themeContext";
+import { useTranslation } from "../../utils/useTranslation";
 
 type LastWorkout = {
   id?: string;
@@ -28,6 +29,7 @@ export default function TrainHubScreen() {
   const [loading, setLoading] = useState(true);
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -40,7 +42,6 @@ export default function TrainHubScreen() {
     blueBorder: isDark
       ? "rgba(46,139,255,0.55)"
       : "rgba(46,139,255,0.35)",
-    softBg: isDark ? "rgba(255,255,255,0.08)" : "rgba(7,17,31,0.06)",
   };
 
   useFocusEffect(
@@ -71,7 +72,7 @@ export default function TrainHubScreen() {
       if (userData.lastWorkoutId) {
         setLastWorkout({
           id: userData.lastWorkoutId,
-          title: userData.lastWorkoutTitle || "Entrenamiento",
+          title: userData.lastWorkoutTitle || t("workout"),
           estimatedMinutes: userData.lastWorkoutMinutes || 0,
           level: userData.lastWorkoutLevel || "basico",
           roundsCount: userData.lastWorkoutRounds || 0,
@@ -95,6 +96,11 @@ export default function TrainHubScreen() {
     } as any);
   }
 
+  function formatLevel(level?: string) {
+    if (!level) return t("basic");
+    return level.charAt(0).toUpperCase() + level.slice(1);
+  }
+
   return (
     <ImageBackground
       source={require("../../assets/images/ring-bg.png")}
@@ -105,7 +111,7 @@ export default function TrainHubScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.topBar}>
           <Text style={[styles.title, { color: colors.text }]}>
-            Entrenar
+            {t("train")}
           </Text>
 
           <Ionicons name="barbell-outline" size={28} color="#FF7A00" />
@@ -124,7 +130,7 @@ export default function TrainHubScreen() {
             <ActivityIndicator size="large" color="#FF7A00" />
 
             <Text style={[styles.loadingText, { color: colors.text }]}>
-              Cargando entrenamiento...
+              {t("loadingWorkout")}
             </Text>
           </View>
         ) : lastWorkout ? (
@@ -139,29 +145,20 @@ export default function TrainHubScreen() {
             onPress={goToLastWorkoutDetail}
           >
             <View style={styles.mainCardTextWrap}>
-              <Text
-                style={[styles.mainCardSmall, { color: colors.muted }]}
-              >
-                Último entrenamiento realizado
+              <Text style={[styles.mainCardSmall, { color: colors.muted }]}>
+                {t("lastWorkout")}
               </Text>
 
-              <Text
-                style={[styles.mainCardTitle, { color: colors.text }]}
-              >
+              <Text style={[styles.mainCardTitle, { color: colors.text }]}>
                 {lastWorkout.title}
               </Text>
 
-              <Text
-                style={[styles.mainCardInfo, { color: colors.muted }]}
-              >
+              <Text style={[styles.mainCardInfo, { color: colors.muted }]}>
                 {(lastWorkout.roundsCount || 0) > 0
-                  ? `${lastWorkout.roundsCount} rondas`
-                  : "Rondas por definir"}{" "}
-                · {lastWorkout.estimatedMinutes || 0} min ·{" "}
-                {lastWorkout.level
-                  ? lastWorkout.level.charAt(0).toUpperCase() +
-                    lastWorkout.level.slice(1)
-                  : "Básico"}
+                  ? `${lastWorkout.roundsCount} ${t("rounds")}`
+                  : t("roundsToDefine")}{" "}
+                · {lastWorkout.estimatedMinutes || 0} {t("minutes")} ·{" "}
+                {formatLevel(lastWorkout.level)}
               </Text>
             </View>
 
@@ -180,16 +177,12 @@ export default function TrainHubScreen() {
             ]}
           >
             <View style={styles.emptyTopLeft}>
-              <Text
-                style={[styles.mainCardSmall, { color: colors.muted }]}
-              >
-                Último entrenamiento realizado
+              <Text style={[styles.mainCardSmall, { color: colors.muted }]}>
+                {t("lastWorkout")}
               </Text>
 
-              <Text
-                style={[styles.emptyTopTitle, { color: colors.text }]}
-              >
-                Aún no has realizado ningún entrenamiento
+              <Text style={[styles.emptyTopTitle, { color: colors.text }]}>
+                {t("noWorkoutDone")}
               </Text>
             </View>
 
@@ -199,10 +192,8 @@ export default function TrainHubScreen() {
           </View>
         )}
 
-        <Text
-          style={[styles.sectionTitle, { color: colors.text }]}
-        >
-          Accesos rápidos
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          {t("quickAccess")}
         </Text>
 
         <View style={styles.grid}>
@@ -218,22 +209,12 @@ export default function TrainHubScreen() {
               router.push({ pathname: "/offline-workouts" } as any)
             }
           >
-            <Ionicons
-              name="download-outline"
-              size={30}
-              color="#2E8BFF"
-            />
-
-            <Text
-              style={[styles.cardTitle, { color: colors.text }]}
-            >
-              Descargados
+            <Ionicons name="download-outline" size={30} color="#2E8BFF" />
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              {t("downloaded")}
             </Text>
-
-            <Text
-              style={[styles.cardText, { color: colors.muted }]}
-            >
-              Entrena sin conexión
+            <Text style={[styles.cardText, { color: colors.muted }]}>
+              {t("trainOffline")}
             </Text>
           </Pressable>
 
@@ -245,26 +226,14 @@ export default function TrainHubScreen() {
                 borderColor: colors.orangeBorder,
               },
             ]}
-            onPress={() =>
-              router.push({ pathname: "/favorites" } as any)
-            }
+            onPress={() => router.push({ pathname: "/favorites" } as any)}
           >
-            <Ionicons
-              name="heart-outline"
-              size={30}
-              color="#FF7A00"
-            />
-
-            <Text
-              style={[styles.cardTitle, { color: colors.text }]}
-            >
-              Favoritos
+            <Ionicons name="heart-outline" size={30} color="#FF7A00" />
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              {t("favorites")}
             </Text>
-
-            <Text
-              style={[styles.cardText, { color: colors.muted }]}
-            >
-              Tus rutinas guardadas
+            <Text style={[styles.cardText, { color: colors.muted }]}>
+              {t("savedRoutines")}
             </Text>
           </Pressable>
 
@@ -276,26 +245,14 @@ export default function TrainHubScreen() {
                 borderColor: colors.blueBorder,
               },
             ]}
-            onPress={() =>
-              router.push({ pathname: "/my-workouts" } as any)
-            }
+            onPress={() => router.push({ pathname: "/my-workouts" } as any)}
           >
-            <Ionicons
-              name="create-outline"
-              size={30}
-              color="#2E8BFF"
-            />
-
-            <Text
-              style={[styles.cardTitle, { color: colors.text }]}
-            >
-              Mis entrenos
+            <Ionicons name="create-outline" size={30} color="#2E8BFF" />
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              {t("myWorkouts")}
             </Text>
-
-            <Text
-              style={[styles.cardText, { color: colors.muted }]}
-            >
-              Rutinas creadas por ti
+            <Text style={[styles.cardText, { color: colors.muted }]}>
+              {t("createdByYou")}
             </Text>
           </Pressable>
 
@@ -307,26 +264,14 @@ export default function TrainHubScreen() {
                 borderColor: colors.orangeBorder,
               },
             ]}
-            onPress={() =>
-              router.push({ pathname: "/workouts" } as any)
-            }
+            onPress={() => router.push({ pathname: "/workouts" } as any)}
           >
-            <Ionicons
-              name="albums-outline"
-              size={30}
-              color="#FF7A00"
-            />
-
-            <Text
-              style={[styles.cardTitle, { color: colors.text }]}
-            >
-              Entrenos app
+            <Ionicons name="albums-outline" size={30} color="#FF7A00" />
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              {t("appWorkouts")}
             </Text>
-
-            <Text
-              style={[styles.cardText, { color: colors.muted }]}
-            >
-              Rutinas incluidas en ShadowBox
+            <Text style={[styles.cardText, { color: colors.muted }]}>
+              {t("includedRoutines")}
             </Text>
           </Pressable>
         </View>

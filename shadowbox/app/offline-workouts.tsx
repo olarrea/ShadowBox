@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { getOfflineWorkouts } from "../database";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 
 type OfflineWorkout = {
   id: string;
@@ -23,16 +24,12 @@ type OfflineWorkout = {
   rounds?: any[];
 };
 
-function formatLevel(level?: string) {
-  if (!level) return "Básico";
-  return level.charAt(0).toUpperCase() + level.slice(1);
-}
-
 export default function OfflineWorkoutsScreen() {
   const [downloads, setDownloads] = useState<OfflineWorkout[]>([]);
   const [loading, setLoading] = useState(true);
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -47,6 +44,16 @@ export default function OfflineWorkoutsScreen() {
       loadDownloads();
     }, [])
   );
+
+  function formatLevel(level?: string) {
+    if (!level) return t("basic");
+
+    if (level === "basico") return t("basic");
+    if (level === "intermedio") return t("intermediate");
+    if (level === "experto") return t("expert");
+
+    return level.charAt(0).toUpperCase() + level.slice(1);
+  }
 
   function loadDownloads() {
     try {
@@ -86,7 +93,7 @@ export default function OfflineWorkoutsScreen() {
           </Pressable>
 
           <Text style={[styles.title, { color: colors.text }]}>
-            Descargados
+            {t("downloaded")}
           </Text>
 
           <View style={{ width: 26 }} />
@@ -95,8 +102,9 @@ export default function OfflineWorkoutsScreen() {
         {loading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="large" color="#2E8BFF" />
+
             <Text style={[styles.loadingText, { color: colors.text }]}>
-              Cargando entrenamientos...
+              {t("loadingWorkouts")}
             </Text>
           </View>
         ) : downloads.length === 0 ? (
@@ -112,11 +120,11 @@ export default function OfflineWorkoutsScreen() {
             <Ionicons name="download-outline" size={34} color="#2E8BFF" />
 
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              Aún no has descargado entrenamientos
+              {t("noDownloadedWorkouts")}
             </Text>
 
             <Text style={[styles.emptyText, { color: colors.muted }]}>
-              Descárgalos desde el detalle para entrenar sin conexión.
+              {t("downloadedHint")}
             </Text>
           </View>
         ) : (
@@ -139,8 +147,8 @@ export default function OfflineWorkoutsScreen() {
 
                 <Text style={[styles.cardInfo, { color: colors.muted }]}>
                   {(workout.rounds?.length || 0) > 0
-                    ? `${workout.rounds?.length} rondas`
-                    : "Rondas por definir"}{" "}
+                    ? `${workout.rounds?.length} ${t("rounds")}`
+                    : t("roundsUndefined")}{" "}
                   · {workout.estimatedMinutes} min · {formatLevel(workout.level)}
                 </Text>
               </View>

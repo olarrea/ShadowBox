@@ -14,6 +14,7 @@ import { signOut } from "firebase/auth";
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../../themeContext";
+import { useTranslation } from "../../utils/useTranslation";
 
 type UserData = {
   email?: string;
@@ -27,6 +28,7 @@ type UserData = {
 export default function ProfileScreen() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -53,8 +55,8 @@ export default function ProfileScreen() {
             setUserData(userSnap.data() as UserData);
           } else {
             setUserData({
-              email: user.email || "Usuario",
-              name: user.email || "Usuario",
+              email: user.email || t("user"),
+              name: user.email || t("user"),
               photo: null,
               sessions: 0,
               totalTime: 0,
@@ -67,7 +69,7 @@ export default function ProfileScreen() {
       };
 
       fetchUserData();
-    }, [])
+    }, [t])
   );
 
   const handleLogout = async () => {
@@ -111,7 +113,7 @@ export default function ProfileScreen() {
         )}
 
         <Text style={[styles.name, { color: colors.text }]}>
-          {userData?.name || userData?.email || "Usuario"}
+          {userData?.name || userData?.email || t("user")}
         </Text>
       </View>
 
@@ -127,7 +129,7 @@ export default function ProfileScreen() {
             {userData?.sessions ?? 0}
           </Text>
           <Text style={[styles.statLabel, { color: colors.muted }]}>
-            Sesiones
+            {t("sessions")}
           </Text>
         </View>
 
@@ -139,10 +141,10 @@ export default function ProfileScreen() {
         >
           <Ionicons name="time-outline" size={24} color="#4da6ff" />
           <Text style={[styles.statNumber, { color: colors.text }]}>
-            {userData?.totalTime ?? 0} min
+            {userData?.totalTime ?? 0} {t("minutes")}
           </Text>
           <Text style={[styles.statLabel, { color: colors.muted }]}>
-            Tiempo
+            {t("time")}
           </Text>
         </View>
 
@@ -157,7 +159,7 @@ export default function ProfileScreen() {
             {userData?.level ?? 1}
           </Text>
           <Text style={[styles.statLabel, { color: colors.muted }]}>
-            Nivel
+            {t("level")}
           </Text>
         </View>
       </View>
@@ -176,7 +178,7 @@ export default function ProfileScreen() {
             color={isDark ? "white" : "#07111F"}
           />
           <Text style={[styles.optionText, { color: colors.text }]}>
-            Editar perfil
+            {t("editProfile")}
           </Text>
         </Pressable>
 
@@ -193,7 +195,7 @@ export default function ProfileScreen() {
             color={isDark ? "white" : "#07111F"}
           />
           <Text style={[styles.optionText, { color: colors.text }]}>
-            Configuración
+            {t("settings")}
           </Text>
         </Pressable>
 
@@ -206,7 +208,7 @@ export default function ProfileScreen() {
         >
           <Ionicons name="log-out-outline" size={20} color="#ff4d4d" />
           <Text style={[styles.optionText, { color: "#ff4d4d" }]}>
-            Cerrar sesión
+            {t("logout")}
           </Text>
         </Pressable>
       </View>

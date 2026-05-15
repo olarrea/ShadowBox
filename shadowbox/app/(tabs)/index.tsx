@@ -14,6 +14,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../firebaseConfig";
 import { useTheme } from "../../themeContext";
+import { useTranslation } from "../../utils/useTranslation";
 
 type UserData = {
   name?: string;
@@ -25,6 +26,7 @@ type UserData = {
 export default function HomeScreen() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -111,9 +113,12 @@ export default function HomeScreen() {
               style={[styles.name, { color: colors.text }]}
               numberOfLines={1}
             >
-              {userData?.name || userData?.email || "Usuario"}
+              {userData?.name || userData?.email || t("user")}
             </Text>
-            <Text style={styles.level}>Nivel {userData?.level || 1}</Text>
+
+            <Text style={styles.level}>
+              {t("level")} {userData?.level || 1}
+            </Text>
           </View>
         </View>
 
@@ -127,22 +132,19 @@ export default function HomeScreen() {
           ]}
         >
           <Text style={[styles.infoTitle, { color: colors.text }]}>
-            ¿Qué es ShadowBox?
+            {t("whatIsShadowBox")}
           </Text>
 
           <Text style={[styles.infoText, { color: colors.muted }]}>
-            ShadowBox es una aplicación móvil diseñada para entrenar boxeo en casa
-            de forma estructurada, accesible y motivadora.
+            {t("homeDescription1")}
           </Text>
 
           <Text style={[styles.infoText, { color: colors.muted }]}>
-            Puedes seguir entrenamientos, crear tus propias rutinas, guardar tus
-            favoritos, descargar sesiones y consultar tu progreso personal.
+            {t("homeDescription2")}
           </Text>
 
           <Text style={[styles.infoText, { color: colors.muted }]}>
-            Su objetivo es ayudarte a mejorar técnica, resistencia y constancia
-            mediante planes claros y entrenamientos adaptados a tu nivel.
+            {t("homeDescription3")}
           </Text>
         </View>
 
@@ -151,7 +153,7 @@ export default function HomeScreen() {
           onPress={() => router.push({ pathname: "/create-workout" } as any)}
         >
           <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
-          <Text style={styles.createButtonText}>Crear entrenamiento</Text>
+          <Text style={styles.createButtonText}>{t("createWorkout")}</Text>
         </Pressable>
 
         <Pressable
@@ -169,7 +171,7 @@ export default function HomeScreen() {
           onPress={() => router.push({ pathname: "/generate" } as any)}
         >
           <Ionicons name="navigate-outline" size={22} color="#FFFFFF" />
-          <Text style={styles.generateButtonText}>Generar plan</Text>
+          <Text style={styles.generateButtonText}>{t("generatePlan")}</Text>
         </Pressable>
 
         <Pressable
@@ -177,7 +179,7 @@ export default function HomeScreen() {
           onPress={() => router.push({ pathname: "/progress" } as any)}
         >
           <Ionicons name="bar-chart-outline" size={22} color="#FFFFFF" />
-          <Text style={styles.progressButtonText}>Ver progreso</Text>
+          <Text style={styles.progressButtonText}>{t("viewProgress")}</Text>
         </Pressable>
 
         <View
@@ -193,7 +195,7 @@ export default function HomeScreen() {
         >
           <Ionicons name="flash-outline" size={22} color="#FF7A00" />
           <Text style={[styles.motivationText, { color: colors.text }]}>
-            “El campeón se construye ronda a ronda.”
+            {t("motivationQuote")}
           </Text>
         </View>
       </ScrollView>

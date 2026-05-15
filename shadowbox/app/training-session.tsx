@@ -16,6 +16,7 @@ import { auth, db } from "../firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { router, useLocalSearchParams } from "expo-router";
 import { getCompletedChallenges } from "../utils/challenges";
+import { useTranslation } from "../utils/useTranslation";
 
 type WorkoutRound = {
   title: string;
@@ -38,13 +39,13 @@ const DEFAULT_ROUNDS: WorkoutRound[] = [
     title: "Calentamiento",
     description: "Movilidad articular y activación general antes de empezar.",
     duration: 300,
-    image: "warmup",
+    image: "",
   },
   {
     title: "Shadowboxing",
     description: "Practica desplazamientos, guardia y combinaciones simples.",
     duration: 180,
-    image: "shadowboxing",
+    image: "",
   },
 ];
 
@@ -69,6 +70,7 @@ function calculateUserLevel(
 
 export default function TrainScreen() {
   const { workoutId } = useLocalSearchParams();
+  const { t } = useTranslation();
 
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [rounds, setRounds] = useState<WorkoutRound[]>([]);
@@ -98,8 +100,8 @@ export default function TrainScreen() {
       loadWorkout();
     } else {
       setWorkout({
-        title: "Entrenamiento",
-        description: "Entrenamiento por defecto",
+        title: t("workout"),
+        description: t("defaultWorkout"),
         level: "basico",
         estimatedMinutes: 8,
         rounds: DEFAULT_ROUNDS,
@@ -185,8 +187,8 @@ export default function TrainScreen() {
         setSecondsLeft(loadedRounds[0].duration);
       } else {
         setWorkout({
-          title: "Entrenamiento",
-          description: "Entrenamiento por defecto",
+          title: t("workout"),
+          description: t("defaultWorkout"),
           level: "basico",
           estimatedMinutes: 8,
           rounds: DEFAULT_ROUNDS,
@@ -197,8 +199,8 @@ export default function TrainScreen() {
     } catch (error) {
       console.log("ERROR CARGANDO TRAINING SESSION:", error);
       setWorkout({
-        title: "Entrenamiento",
-        description: "Entrenamiento por defecto",
+        title: t("workout"),
+        description: t("defaultWorkout"),
         level: "basico",
         estimatedMinutes: 8,
         rounds: DEFAULT_ROUNDS,
@@ -234,10 +236,10 @@ export default function TrainScreen() {
       setIsRunning(false);
 
       Alert.alert(
-        "Ronda terminada",
+        t("roundFinished"),
         currentRoundIndex < rounds.length - 1
-          ? "Pulsa 'Cambiar ronda' para continuar."
-          : "Has terminado la última ronda. Pulsa 'Finalizar'."
+          ? t("pressNextRound")
+          : t("lastRoundFinished")
       );
     }
   }, [secondsLeft, loading, currentRoundIndex, rounds.length]);
@@ -258,7 +260,7 @@ export default function TrainScreen() {
     if (!rounds.length) return;
 
     if (currentRoundIndex >= rounds.length - 1) {
-      Alert.alert("Última ronda", "Ya estás en la última ronda del entrenamiento.");
+      Alert.alert(t("lastRound"), t("alreadyLastRound"));
       return;
     }
 
@@ -278,7 +280,7 @@ export default function TrainScreen() {
 
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert("Error", "No hay usuario autenticado.");
+        Alert.alert(t("genericError"), t("noAuthenticatedUser"));
         return;
       }
 
@@ -286,7 +288,7 @@ export default function TrainScreen() {
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        Alert.alert("Error", "No se encontraron los datos del usuario.");
+        Alert.alert(t("genericError"), t("userDataNotFound"));
         return;
       }
 
@@ -301,9 +303,25 @@ export default function TrainScreen() {
       const newSessions = currentSessions + 1;
       const newTotalTime = currentTotalTime + sessionMinutes;
 
-      const completedChallengeObjects = getCompletedChallenges(
+      const baseCompletedChallengeObjects = getCompletedChallenges(
         newSessions,
         newTotalTime
+      );
+
+      const baseCompletedChallengeIds = baseCompletedChallengeObjects.map(
+        (challenge) => challenge.id
+      );
+
+      const newLevel = calculateUserLevel(
+        newSessions,
+        newTotalTime,
+        baseCompletedChallengeIds.length
+      );
+
+      const completedChallengeObjects = getCompletedChallenges(
+        newSessions,
+        newTotalTime,
+        newLevel
       );
 
       const completedChallengeIds = completedChallengeObjects.map(
@@ -314,12 +332,6 @@ export default function TrainScreen() {
         (id) => !previousCompletedChallenges.includes(id)
       );
 
-      const newLevel = calculateUserLevel(
-        newSessions,
-        newTotalTime,
-        completedChallengeIds.length
-      );
-
       await updateDoc(userRef, {
         sessions: newSessions,
         totalTime: newTotalTime,
@@ -327,7 +339,7 @@ export default function TrainScreen() {
         completedChallenges: completedChallengeIds,
 
         lastWorkoutId: String(workoutId || ""),
-        lastWorkoutTitle: workout?.title || "Entrenamiento",
+        lastWorkoutTitle: workout?.title || t("workout"),
         lastWorkoutMinutes: workout?.estimatedMinutes || sessionMinutes,
         lastWorkoutLevel: workout?.level || "basico",
         lastWorkoutRounds: rounds.length,
@@ -336,12 +348,16 @@ export default function TrainScreen() {
 
       const unlockedMessage =
         newUnlockedChallenges.length > 0
-          ? `\n\nHas desbloqueado ${newUnlockedChallenges.length} reto(s) nuevo(s).`
+          ? `\n\n${t("unlockedChallenges").replace(
+              "{count}",
+              String(newUnlockedChallenges.length)
+            )}`
           : "";
 
       Alert.alert(
-        "Entrenamiento guardado",
-        `Has completado 1 sesión y sumado ${sessionMinutes} min.${unlockedMessage}`,
+        t("workoutSaved"),
+        `${t("sessionCompleted")
+          .replace("{minutes}", String(sessionMinutes))}${unlockedMessage}`,
         [
           {
             text: "OK",
@@ -353,7 +369,7 @@ export default function TrainScreen() {
       );
     } catch (err) {
       console.log("ERROR GUARDANDO ENTRENAMIENTO:", err);
-      Alert.alert("Error", "No se pudo guardar el progreso del entrenamiento.");
+      Alert.alert(t("genericError"), t("saveWorkoutProgressError"));
     } finally {
       setSaving(false);
     }
@@ -363,7 +379,7 @@ export default function TrainScreen() {
     return (
       <View style={styles.loadingScreen}>
         <ActivityIndicator size="large" color="#FF7A00" />
-        <Text style={styles.loadingText}>Cargando entrenamiento...</Text>
+        <Text style={styles.loadingText}>{t("loadingWorkout")}</Text>
       </View>
     );
   }
@@ -406,7 +422,7 @@ export default function TrainScreen() {
 
         <View style={styles.infoWrap}>
           <Text style={styles.roundText}>
-            Ronda {currentRoundIndex + 1} de {rounds.length}
+            {t("round")} {currentRoundIndex + 1} {t("of")} {rounds.length}
           </Text>
 
           <View style={styles.restRow}>
@@ -415,7 +431,7 @@ export default function TrainScreen() {
               size={18}
               color="rgba(255,255,255,0.85)"
             />
-            <Text style={styles.restText}>Trabajo</Text>
+            <Text style={styles.restText}>{t("work")}</Text>
           </View>
         </View>
 
@@ -434,7 +450,7 @@ export default function TrainScreen() {
         ) : (
           <View style={styles.imageTag}>
             <Ionicons name="image-outline" size={18} color="#FF7A00" />
-            <Text style={styles.imageTagText}>Sin imagen de referencia</Text>
+            <Text style={styles.imageTagText}>{t("noReferenceImage")}</Text>
           </View>
         )}
 
@@ -450,7 +466,7 @@ export default function TrainScreen() {
               color="#FFFFFF"
             />
             <Text style={styles.blueBtnText}>
-              {isRunning ? "Pausar" : "Continuar"}
+              {isRunning ? t("pause") : t("continue")}
             </Text>
           </Pressable>
 
@@ -461,7 +477,7 @@ export default function TrainScreen() {
           >
             <View style={styles.stopSquare} />
             <Text style={styles.orangeBtnText}>
-              {saving ? "Guardando..." : "Finalizar"}
+              {saving ? t("saving") : t("finish")}
             </Text>
           </Pressable>
 
@@ -471,29 +487,16 @@ export default function TrainScreen() {
             disabled={saving}
           >
             <Ionicons name="repeat" size={22} color="#2E8BFF" />
-            <Text style={styles.whiteBtnText}>Cambiar{"\n"}ronda</Text>
+            <Text style={styles.whiteBtnText}>
+              {t("changeRound")}
+            </Text>
           </Pressable>
         </View>
 
         <View style={styles.fakeBottomRow}>
-          <Ionicons
-            name="time-outline"
-            size={22}
-            color="#FFFFFF"
-            style={{ opacity: 0.95 }}
-          />
-          <Ionicons
-            name="layers-outline"
-            size={22}
-            color="#FFFFFF"
-            style={{ opacity: 0.6 }}
-          />
-          <Ionicons
-            name="fitness-outline"
-            size={22}
-            color="#FFFFFF"
-            style={{ opacity: 0.6 }}
-          />
+          <Ionicons name="time-outline" size={22} color="#FFFFFF" style={{ opacity: 0.95 }} />
+          <Ionicons name="layers-outline" size={22} color="#FFFFFF" style={{ opacity: 0.6 }} />
+          <Ionicons name="fitness-outline" size={22} color="#FFFFFF" style={{ opacity: 0.6 }} />
         </View>
       </View>
     </ImageBackground>
@@ -514,74 +517,58 @@ function ProgressRing({ progress }: { progress: number }) {
 
 const styles = StyleSheet.create({
   bg: { flex: 1, backgroundColor: "#070A0F" },
-
-  container: {
-    flex: 1,
-    paddingHorizontal: 18,
-    paddingTop: 14,
-  },
-
+  container: { flex: 1, paddingHorizontal: 18, paddingTop: 14 },
   loadingScreen: {
     flex: 1,
     backgroundColor: "#070A0F",
     justifyContent: "center",
     alignItems: "center",
   },
-
   loadingText: {
     color: "white",
     marginTop: 12,
     fontWeight: "700",
   },
-
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 8,
   },
-
   brandRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
-
   brand: {
     color: "#FFFFFF",
     fontSize: 22,
     letterSpacing: 0.5,
   },
-
   centerWrap: {
     alignItems: "center",
     marginTop: 10,
     marginBottom: 16,
   },
-
   timeOverlay: {
     position: "absolute",
     top: 78,
     alignItems: "center",
     justifyContent: "center",
   },
-
   timeText: {
     fontSize: 54,
     fontWeight: "900",
   },
-
   timeWhite: { color: "#FFFFFF" },
   timeBlue: { color: "#2E8BFF" },
   timeColon: { color: "rgba(255,255,255,0.85)" },
-
   ringWrap: {
     width: 210,
     height: 210,
     alignItems: "center",
     justifyContent: "center",
   },
-
   ringBlue: {
     position: "absolute",
     width: 210,
@@ -594,7 +581,6 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 8,
   },
-
   ringOrange: {
     position: "absolute",
     width: 210,
@@ -603,38 +589,32 @@ const styles = StyleSheet.create({
     borderWidth: 10,
     borderColor: "#FF7A00",
   },
-
   ringCenter: {
     width: 170,
     height: 170,
     borderRadius: 85,
     backgroundColor: "rgba(0,0,0,0.55)",
   },
-
   infoWrap: {
     alignItems: "center",
     gap: 6,
     marginBottom: 8,
   },
-
   roundText: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 18,
     fontWeight: "700",
   },
-
   restRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
   },
-
   restText: {
     color: "rgba(255,255,255,0.75)",
     fontSize: 18,
     fontWeight: "700",
   },
-
   bigTitle: {
     textAlign: "center",
     fontSize: 34,
@@ -644,7 +624,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     paddingHorizontal: 12,
   },
-
   roundDescription: {
     color: "rgba(255,255,255,0.78)",
     textAlign: "center",
@@ -653,7 +632,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     paddingHorizontal: 12,
   },
-
   imageTag: {
     flexDirection: "row",
     alignSelf: "center",
@@ -665,19 +643,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 18,
   },
-
   imageTagText: {
     color: "rgba(255,255,255,0.82)",
     fontWeight: "600",
   },
-
   actionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
     marginTop: 8,
   },
-
   bigBtn: {
     width: 118,
     height: 106,
@@ -686,18 +661,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
-
   blueBtn: {
     backgroundColor: "#2E8BFF",
   },
-
   blueBtnText: {
     color: "#FFFFFF",
     textAlign: "center",
     fontWeight: "900",
     lineHeight: 20,
   },
-
   midBtn: {
     width: 118,
     height: 106,
@@ -709,37 +681,31 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,122,0,0.35)",
     backgroundColor: "rgba(255,122,0,0.20)",
   },
-
   disabledBtn: {
     opacity: 0.7,
   },
-
   stopSquare: {
     width: 22,
     height: 22,
     borderRadius: 4,
     backgroundColor: "#FF7A00",
   },
-
   orangeBtnText: {
     color: "#FFFFFF",
     fontWeight: "900",
     fontSize: 16,
   },
-
   whiteBtn: {
     backgroundColor: "#FFFFFF",
     borderWidth: 2,
     borderColor: "rgba(46,139,255,0.5)",
   },
-
   whiteBtnText: {
     color: "#2E8BFF",
     textAlign: "center",
     fontWeight: "900",
     lineHeight: 18,
   },
-
   roundImage: {
     width: "100%",
     height: 130,
@@ -748,7 +714,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "rgba(255,122,0,0.35)",
   },
-
   fakeBottomRow: {
     marginTop: "auto",
     height: 60,

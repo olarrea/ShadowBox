@@ -14,6 +14,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import { CHALLENGES } from "../utils/challenges";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 
 type UserStats = {
   sessions?: number;
@@ -34,6 +35,7 @@ export default function ProgressScreen() {
   });
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -126,7 +128,9 @@ export default function ProgressScreen() {
             />
           </Pressable>
 
-          <Text style={[styles.title, { color: colors.text }]}>Progreso</Text>
+          <Text style={[styles.title, { color: colors.text }]}>
+            {t("progress")}
+          </Text>
 
           <View style={{ width: 26 }} />
         </View>
@@ -142,13 +146,15 @@ export default function ProgressScreen() {
         >
           <View style={styles.circle}>
             <Text style={[styles.levelText, { color: colors.text }]}>
-              Nivel {level}
+              {t("level")} {level}
             </Text>
+
             <Text style={styles.percentText}>{challengePercent}%</Text>
           </View>
 
           <Text style={[styles.levelInfo, { color: colors.muted }]}>
-            {completed.length} de {totalChallenges} retos completados
+            {completed.length} {t("of")} {totalChallenges}{" "}
+            {t("completedChallenges")}
           </Text>
 
           <View style={[styles.progressBar, { backgroundColor: colors.progressBg }]}>
@@ -168,7 +174,7 @@ export default function ProgressScreen() {
               {sessions}
             </Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>
-              Sesiones
+              {t("sessions")}
             </Text>
           </View>
 
@@ -183,7 +189,7 @@ export default function ProgressScreen() {
               {hours}h {minutes}m
             </Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>
-              Tiempo
+              {t("time")}
             </Text>
           </View>
 
@@ -198,7 +204,7 @@ export default function ProgressScreen() {
               {completed.length}
             </Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>
-              Retos
+              {t("challenges")}
             </Text>
           </View>
         </View>
@@ -215,7 +221,7 @@ export default function ProgressScreen() {
           <View style={styles.lastHeader}>
             <Ionicons name="flame-outline" size={24} color="#FF7A00" />
             <Text style={[styles.lastTitle, { color: colors.text }]}>
-              Último entrenamiento
+              {t("lastWorkout")}
             </Text>
           </View>
 
@@ -225,19 +231,19 @@ export default function ProgressScreen() {
                 {stats.lastWorkoutTitle}
               </Text>
               <Text style={[styles.lastInfo, { color: colors.muted }]}>
-                {stats.lastWorkoutRounds || 0} rondas ·{" "}
+                {stats.lastWorkoutRounds || 0} {t("rounds")} ·{" "}
                 {stats.lastWorkoutMinutes || 0} min
               </Text>
             </>
           ) : (
             <Text style={[styles.emptyText, { color: colors.muted }]}>
-              Aún no has completado ningún entrenamiento.
+              {t("noCompletedWorkout")}
             </Text>
           )}
         </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Retos superados
+          {t("completedChallengesTitle")}
         </Text>
 
         {completed.length === 0 ? (
@@ -252,8 +258,7 @@ export default function ProgressScreen() {
           >
             <Ionicons name="trophy-outline" size={26} color="#FF7A00" />
             <Text style={[styles.emptyChallengeText, { color: colors.muted }]}>
-              Aún no has completado ningún reto. Termina entrenamientos para
-              desbloquearlos.
+              {t("noChallengesCompleted")}
             </Text>
           </View>
         ) : (
@@ -291,7 +296,7 @@ export default function ProgressScreen() {
         )}
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Retos pendientes
+          {t("pendingChallengesTitle")}
         </Text>
 
         {pending.map((challenge) => {
@@ -352,7 +357,7 @@ export default function ProgressScreen() {
           onPress={() => router.push({ pathname: "/(tabs)/train" } as any)}
         >
           <Ionicons name="play" size={20} color="white" />
-          <Text style={styles.trainBtnText}>Nueva sesión</Text>
+          <Text style={styles.trainBtnText}>{t("newSession")}</Text>
         </Pressable>
       </ScrollView>
     </ImageBackground>
@@ -361,238 +366,38 @@ export default function ProgressScreen() {
 
 const styles = StyleSheet.create({
   bg: { flex: 1 },
-
-  container: {
-    padding: 20,
-    paddingTop: 54,
-    paddingBottom: 32,
-  },
-
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 24,
-  },
-
-  title: {
-    fontSize: 26,
-    fontWeight: "900",
-  },
-
-  levelCard: {
-    borderRadius: 24,
-    padding: 22,
-    alignItems: "center",
-    borderWidth: 2,
-    marginBottom: 22,
-  },
-
-  circle: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    borderWidth: 8,
-    borderColor: "#4DA3FF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-
-  levelText: {
-    fontSize: 24,
-    fontWeight: "900",
-  },
-
-  percentText: {
-    color: "#FF7A00",
-    fontSize: 18,
-    fontWeight: "800",
-    marginTop: 4,
-  },
-
-  levelInfo: {
-    fontSize: 14,
-    marginBottom: 12,
-    textAlign: "center",
-  },
-
-  progressBar: {
-    width: "100%",
-    height: 12,
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-
-  progressFill: {
-    height: "100%",
-    borderRadius: 10,
-    backgroundColor: "#FF7A00",
-  },
-
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 22,
-  },
-
-  statCard: {
-    width: "31%",
-    padding: 14,
-    borderRadius: 18,
-    alignItems: "center",
-    borderWidth: 1.5,
-  },
-
-  statValue: {
-    fontSize: 18,
-    fontWeight: "900",
-    marginTop: 8,
-    textAlign: "center",
-  },
-
-  statLabel: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-
-  lastCard: {
-    borderRadius: 22,
-    padding: 20,
-    borderWidth: 1.5,
-    marginBottom: 22,
-  },
-
-  lastHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  lastTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    marginLeft: 8,
-  },
-
-  lastWorkout: {
-    fontSize: 20,
-    fontWeight: "900",
-    marginBottom: 6,
-  },
-
-  lastInfo: {
-    fontSize: 14,
-  },
-
-  emptyText: {
-    lineHeight: 20,
-  },
-
-  sectionTitle: {
-    fontSize: 19,
-    fontWeight: "900",
-    marginBottom: 12,
-    marginTop: 4,
-  },
-
-  emptyChallengeCard: {
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1.5,
-    marginBottom: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-
-  emptyChallengeText: {
-    flex: 1,
-    lineHeight: 20,
-  },
-
-  completedChallengeCard: {
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1.5,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-
-  pendingChallengeCard: {
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1.5,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-
-  challengeIconOrange: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "#FF7A00",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  challengeIconBlue: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "#2E8BFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  challengeTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-    marginBottom: 4,
-  },
-
-  challengeText: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-
-  smallProgressBar: {
-    height: 8,
-    borderRadius: 8,
-    marginTop: 10,
-    overflow: "hidden",
-  },
-
-  smallProgressFill: {
-    height: "100%",
-    borderRadius: 8,
-    backgroundColor: "#2E8BFF",
-  },
-
-  challengeProgress: {
-    fontSize: 12,
-    marginTop: 6,
-    fontWeight: "700",
-  },
-
-  trainBtn: {
-    height: 58,
-    borderRadius: 18,
-    backgroundColor: "#FF7A00",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    marginTop: 12,
-  },
-
-  trainBtnText: {
-    color: "white",
-    fontSize: 17,
-    fontWeight: "900",
-  },
+  container: { padding: 20, paddingTop: 54, paddingBottom: 32 },
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 24 },
+  title: { fontSize: 26, fontWeight: "900" },
+  levelCard: { borderRadius: 24, padding: 22, alignItems: "center", borderWidth: 2, marginBottom: 22 },
+  circle: { width: 150, height: 150, borderRadius: 75, borderWidth: 8, borderColor: "#4DA3FF", alignItems: "center", justifyContent: "center", marginBottom: 16 },
+  levelText: { fontSize: 24, fontWeight: "900" },
+  percentText: { color: "#FF7A00", fontSize: 18, fontWeight: "800", marginTop: 4 },
+  levelInfo: { fontSize: 14, marginBottom: 12, textAlign: "center" },
+  progressBar: { width: "100%", height: 12, borderRadius: 10, overflow: "hidden" },
+  progressFill: { height: "100%", borderRadius: 10, backgroundColor: "#FF7A00" },
+  statsRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 22 },
+  statCard: { width: "31%", padding: 14, borderRadius: 18, alignItems: "center", borderWidth: 1.5 },
+  statValue: { fontSize: 18, fontWeight: "900", marginTop: 8, textAlign: "center" },
+  statLabel: { fontSize: 12, marginTop: 4 },
+  lastCard: { borderRadius: 22, padding: 20, borderWidth: 1.5, marginBottom: 22 },
+  lastHeader: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  lastTitle: { fontSize: 18, fontWeight: "900", marginLeft: 8 },
+  lastWorkout: { fontSize: 20, fontWeight: "900", marginBottom: 6 },
+  lastInfo: { fontSize: 14 },
+  emptyText: { lineHeight: 20 },
+  sectionTitle: { fontSize: 19, fontWeight: "900", marginBottom: 12, marginTop: 4 },
+  emptyChallengeCard: { borderRadius: 18, padding: 16, borderWidth: 1.5, marginBottom: 20, flexDirection: "row", alignItems: "center", gap: 12 },
+  emptyChallengeText: { flex: 1, lineHeight: 20 },
+  completedChallengeCard: { borderRadius: 18, padding: 16, borderWidth: 1.5, marginBottom: 12, flexDirection: "row", alignItems: "center", gap: 12 },
+  pendingChallengeCard: { borderRadius: 18, padding: 16, borderWidth: 1.5, marginBottom: 12, flexDirection: "row", alignItems: "center", gap: 12 },
+  challengeIconOrange: { width: 42, height: 42, borderRadius: 21, backgroundColor: "#FF7A00", alignItems: "center", justifyContent: "center" },
+  challengeIconBlue: { width: 42, height: 42, borderRadius: 21, backgroundColor: "#2E8BFF", alignItems: "center", justifyContent: "center" },
+  challengeTitle: { fontSize: 16, fontWeight: "900", marginBottom: 4 },
+  challengeText: { fontSize: 13, lineHeight: 18 },
+  smallProgressBar: { height: 8, borderRadius: 8, marginTop: 10, overflow: "hidden" },
+  smallProgressFill: { height: "100%", borderRadius: 8, backgroundColor: "#2E8BFF" },
+  challengeProgress: { fontSize: 12, marginTop: 6, fontWeight: "700" },
+  trainBtn: { height: 58, borderRadius: 18, backgroundColor: "#FF7A00", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 12 },
+  trainBtnText: { color: "white", fontSize: 17, fontWeight: "900" },
 });

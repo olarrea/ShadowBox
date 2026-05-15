@@ -13,6 +13,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { router } from "expo-router";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 
 type UserRanking = {
   id: string;
@@ -28,6 +29,7 @@ export default function LeaderboardScreen() {
   const [loading, setLoading] = useState(true);
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -65,7 +67,7 @@ export default function LeaderboardScreen() {
 
         return {
           id: docSnap.id,
-          name: data.name || "Usuario",
+          name: data.name || t("user"),
           level,
           sessions,
           totalTime,
@@ -108,7 +110,7 @@ export default function LeaderboardScreen() {
           </Pressable>
 
           <Text style={[styles.title, { color: colors.text }]}>
-            Ranking global
+            {t("globalRanking")}
           </Text>
 
           <View style={{ width: 26 }} />
@@ -117,8 +119,9 @@ export default function LeaderboardScreen() {
         {loading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="large" color="#FF7A00" />
+
             <Text style={[styles.loadingText, { color: colors.text }]}>
-              Cargando ranking...
+              {t("loadingRanking")}
             </Text>
           </View>
         ) : (
@@ -148,7 +151,7 @@ export default function LeaderboardScreen() {
                   <Text
                     style={[styles.info, { color: colors.muted }]}
                   >
-                    Nivel {user.level} · {user.sessions} sesiones
+                    {t("level")} {user.level} · {user.sessions} {t("sessions")}
                   </Text>
                 </View>
               </View>

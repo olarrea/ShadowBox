@@ -16,6 +16,7 @@ import { addDoc, collection, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import * as ImagePicker from "expo-image-picker";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 
 type WorkoutRound = {
   title: string;
@@ -33,6 +34,7 @@ export default function CreateWorkoutScreen() {
   const [saving, setSaving] = useState(false);
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -50,6 +52,7 @@ export default function CreateWorkoutScreen() {
     placeholderBg: isDark
       ? "rgba(255,255,255,0.06)"
       : "rgba(7,17,31,0.06)",
+    placeholderText: isDark ? "rgba(255,255,255,0.45)" : "rgba(7,17,31,0.42)",
   };
 
   const [rounds, setRounds] = useState<WorkoutRound[]>([
@@ -75,7 +78,7 @@ export default function CreateWorkoutScreen() {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permission.granted) {
-        Alert.alert("Permiso necesario", "Debes permitir acceso a la galería.");
+        Alert.alert(t("permissionRequired"), t("galleryPermissionRequired"));
         return;
       }
 
@@ -90,7 +93,7 @@ export default function CreateWorkoutScreen() {
       }
     } catch (error) {
       console.log("ERROR SELECCIONANDO IMAGEN DE RONDA:", error);
-      Alert.alert("Error", "No se pudo seleccionar la imagen.");
+      Alert.alert(t("error"), t("imageSelectError"));
     }
   }
 
@@ -108,7 +111,7 @@ export default function CreateWorkoutScreen() {
 
   function removeRound(index: number) {
     if (rounds.length === 1) {
-      Alert.alert("Aviso", "El entrenamiento debe tener al menos una ronda.");
+      Alert.alert(t("warning"), t("oneRoundRequired"));
       return;
     }
 
@@ -124,12 +127,18 @@ export default function CreateWorkoutScreen() {
     return Math.max(1, Math.ceil(totalSeconds / 60));
   }
 
+  function formatLevel(value: "basico" | "intermedio" | "experto") {
+    if (value === "basico") return t("basic");
+    if (value === "intermedio") return t("intermediate");
+    return t("expert");
+  }
+
   async function saveWorkout() {
     try {
       const user = auth.currentUser;
 
       if (!user) {
-        Alert.alert("Error", "Debes iniciar sesión.");
+        Alert.alert(t("error"), t("loginRequired"));
         return;
       }
 
@@ -138,12 +147,12 @@ export default function CreateWorkoutScreen() {
       const userData = userSnap.exists() ? userSnap.data() : null;
 
       const createdByName =
-        userData?.name || user.displayName || user.email || "Usuario";
+        userData?.name || user.displayName || user.email || t("user");
 
       const createdByPhoto = userData?.photo || null;
 
       if (!title.trim() || !description.trim()) {
-        Alert.alert("Error", "Completa el nombre y la descripción.");
+        Alert.alert(t("error"), t("completeNameAndDescription"));
         return;
       }
 
@@ -153,17 +162,14 @@ export default function CreateWorkoutScreen() {
           !round.description.trim() ||
           !round.duration.trim()
         ) {
-          Alert.alert("Error", "Completa todos los campos de cada ronda.");
+          Alert.alert(t("error"), t("completeRoundFields"));
           return;
         }
 
         const durationNumber = Number(round.duration);
 
         if (Number.isNaN(durationNumber) || durationNumber <= 0) {
-          Alert.alert(
-            "Error",
-            "La duración de cada ronda debe ser un número válido."
-          );
+          Alert.alert(t("error"), t("invalidRoundDuration"));
           return;
         }
       }
@@ -189,19 +195,15 @@ export default function CreateWorkoutScreen() {
         createdAt: new Date().toISOString(),
       });
 
-      Alert.alert(
-        "Entrenamiento creado",
-        "Tu rutina se ha guardado correctamente.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]
-      );
+      Alert.alert(t("workoutCreated"), t("workoutSaved"), [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
     } catch (error) {
       console.log("ERROR CREANDO ENTRENAMIENTO:", error);
-      Alert.alert("Error", "No se pudo crear el entrenamiento.");
+      Alert.alert(t("error"), t("workoutCreateError"));
     } finally {
       setSaving(false);
     }
@@ -225,7 +227,7 @@ export default function CreateWorkoutScreen() {
           </Pressable>
 
           <Text style={[styles.title, { color: colors.text }]}>
-            Crear entreno
+            {t("createWorkoutShort")}
           </Text>
 
           <View style={{ width: 26 }} />
@@ -241,19 +243,17 @@ export default function CreateWorkoutScreen() {
           ]}
         >
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Datos generales
+            {t("generalData")}
           </Text>
 
           <Text style={[styles.label, { color: colors.text }]}>
-            Nombre del entrenamiento
+            {t("workoutName")}
           </Text>
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="Ej: Rutina de velocidad"
-            placeholderTextColor={
-              isDark ? "rgba(255,255,255,0.45)" : "rgba(7,17,31,0.42)"
-            }
+            placeholder={t("workoutNamePlaceholder")}
+            placeholderTextColor={colors.placeholderText}
             style={[
               styles.input,
               {
@@ -265,15 +265,13 @@ export default function CreateWorkoutScreen() {
           />
 
           <Text style={[styles.label, { color: colors.text }]}>
-            Descripción general
+            {t("generalDescription")}
           </Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
-            placeholder="Explica el objetivo del entrenamiento"
-            placeholderTextColor={
-              isDark ? "rgba(255,255,255,0.45)" : "rgba(7,17,31,0.42)"
-            }
+            placeholder={t("generalDescriptionPlaceholder")}
+            placeholderTextColor={colors.placeholderText}
             multiline
             style={[
               styles.input,
@@ -287,7 +285,7 @@ export default function CreateWorkoutScreen() {
           />
 
           <Text style={[styles.label, { color: colors.text }]}>
-            Dificultad
+            {t("difficulty")}
           </Text>
           <View style={styles.levelRow}>
             {(["basico", "intermedio", "experto"] as const).map((item) => (
@@ -314,7 +312,7 @@ export default function CreateWorkoutScreen() {
                     level === item && styles.levelTextActive,
                   ]}
                 >
-                  {item.charAt(0).toUpperCase() + item.slice(1)}
+                  {formatLevel(item)}
                 </Text>
               </Pressable>
             ))}
@@ -332,10 +330,10 @@ export default function CreateWorkoutScreen() {
         >
           <View style={styles.roundsHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Rondas
+              {t("roundsTitle")}
             </Text>
             <Text style={styles.estimatedText}>
-              {calculateEstimatedMinutes()} min aprox.
+              {calculateEstimatedMinutes()} {t("approxMinutes")}
             </Text>
           </View>
 
@@ -351,7 +349,9 @@ export default function CreateWorkoutScreen() {
               ]}
             >
               <View style={styles.roundTop}>
-                <Text style={styles.roundTitle}>Ronda {index + 1}</Text>
+                <Text style={styles.roundTitle}>
+                  {t("round")} {index + 1}
+                </Text>
 
                 <Pressable onPress={() => removeRound(index)}>
                   <Ionicons
@@ -363,17 +363,13 @@ export default function CreateWorkoutScreen() {
               </View>
 
               <Text style={[styles.label, { color: colors.text }]}>
-                Nombre de la ronda
+                {t("roundName")}
               </Text>
               <TextInput
                 value={round.title}
-                onChangeText={(value) =>
-                  updateRound(index, "title", value)
-                }
-                placeholder="Ej: Jab + Cross"
-                placeholderTextColor={
-                  isDark ? "rgba(255,255,255,0.45)" : "rgba(7,17,31,0.42)"
-                }
+                onChangeText={(value) => updateRound(index, "title", value)}
+                placeholder={t("roundNamePlaceholder")}
+                placeholderTextColor={colors.placeholderText}
                 style={[
                   styles.input,
                   {
@@ -385,17 +381,15 @@ export default function CreateWorkoutScreen() {
               />
 
               <Text style={[styles.label, { color: colors.text }]}>
-                Descripción
+                {t("description")}
               </Text>
               <TextInput
                 value={round.description}
                 onChangeText={(value) =>
                   updateRound(index, "description", value)
                 }
-                placeholder="Explica cómo hacer el ejercicio"
-                placeholderTextColor={
-                  isDark ? "rgba(255,255,255,0.45)" : "rgba(7,17,31,0.42)"
-                }
+                placeholder={t("roundDescriptionPlaceholder")}
+                placeholderTextColor={colors.placeholderText}
                 multiline
                 style={[
                   styles.input,
@@ -409,17 +403,13 @@ export default function CreateWorkoutScreen() {
               />
 
               <Text style={[styles.label, { color: colors.text }]}>
-                Duración en segundos
+                {t("durationSeconds")}
               </Text>
               <TextInput
                 value={round.duration}
-                onChangeText={(value) =>
-                  updateRound(index, "duration", value)
-                }
+                onChangeText={(value) => updateRound(index, "duration", value)}
                 placeholder="Ej: 180"
-                placeholderTextColor={
-                  isDark ? "rgba(255,255,255,0.45)" : "rgba(7,17,31,0.42)"
-                }
+                placeholderTextColor={colors.placeholderText}
                 keyboardType="numeric"
                 style={[
                   styles.input,
@@ -432,7 +422,7 @@ export default function CreateWorkoutScreen() {
               />
 
               <Text style={[styles.label, { color: colors.text }]}>
-                Imagen de referencia
+                {t("referenceImage")}
               </Text>
 
               {round.image ? (
@@ -461,7 +451,7 @@ export default function CreateWorkoutScreen() {
                       { color: colors.muted },
                     ]}
                   >
-                    Sin imagen seleccionada
+                    {t("noImageSelected")}
                   </Text>
                 </View>
               )}
@@ -472,7 +462,7 @@ export default function CreateWorkoutScreen() {
               >
                 <Ionicons name="image-outline" size={18} color="#FFFFFF" />
                 <Text style={styles.imageButtonText}>
-                  Seleccionar imagen
+                  {t("selectImage")}
                 </Text>
               </Pressable>
             </View>
@@ -480,7 +470,7 @@ export default function CreateWorkoutScreen() {
 
           <Pressable style={styles.addRoundBtn} onPress={addRound}>
             <Ionicons name="add-circle-outline" size={20} color="#2E8BFF" />
-            <Text style={styles.addRoundText}>Añadir ronda</Text>
+            <Text style={styles.addRoundText}>{t("addRound")}</Text>
           </Pressable>
         </View>
 
@@ -491,7 +481,7 @@ export default function CreateWorkoutScreen() {
         >
           <Ionicons name="save-outline" size={20} color="white" />
           <Text style={styles.saveBtnText}>
-            {saving ? "Guardando..." : "Guardar entrenamiento"}
+            {saving ? t("saving") : t("saveWorkout")}
           </Text>
         </Pressable>
       </ScrollView>

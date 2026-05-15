@@ -17,6 +17,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 
 type UserData = {
   email?: string;
@@ -31,6 +32,7 @@ export default function EditProfileScreen() {
   const [loading, setLoading] = useState(false);
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -43,6 +45,7 @@ export default function EditProfileScreen() {
     softBorder: isDark ? "rgba(255,255,255,0.18)" : "rgba(7,17,31,0.12)",
     avatarBg: isDark ? "rgba(255,255,255,0.15)" : "rgba(7,17,31,0.08)",
     avatarBorder: isDark ? "#FFFFFF" : "#2E8BFF",
+    placeholderText: isDark ? "rgba(255,255,255,0.45)" : "rgba(7,17,31,0.42)",
   };
 
   useEffect(() => {
@@ -77,7 +80,7 @@ export default function EditProfileScreen() {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permission.granted) {
-        Alert.alert("Permiso necesario", "Debes permitir acceso a la galería.");
+        Alert.alert(t("permissionRequired"), t("galleryPermissionRequired"));
         return;
       }
 
@@ -93,7 +96,7 @@ export default function EditProfileScreen() {
       }
     } catch (error) {
       console.log("Error al seleccionar imagen:", error);
-      Alert.alert("Error", "No se pudo seleccionar la imagen.");
+      Alert.alert(t("error"), t("imageSelectError"));
     }
   };
 
@@ -103,12 +106,12 @@ export default function EditProfileScreen() {
 
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert("Error", "No hay usuario autenticado.");
+        Alert.alert(t("error"), t("noAuthenticatedUser"));
         return;
       }
 
       if (!name.trim()) {
-        Alert.alert("Error", "El nombre no puede estar vacío.");
+        Alert.alert(t("error"), t("emptyNameError"));
         return;
       }
 
@@ -119,11 +122,11 @@ export default function EditProfileScreen() {
         photo: photo || "",
       });
 
-      Alert.alert("Perfil actualizado", "Los cambios se han guardado correctamente.");
+      Alert.alert(t("profileUpdated"), t("profileSaved"));
       router.back();
     } catch (error) {
       console.log("Error al guardar perfil:", error);
-      Alert.alert("Error", "No se pudieron guardar los cambios.");
+      Alert.alert(t("error"), t("profileSaveError"));
     } finally {
       setLoading(false);
     }
@@ -150,7 +153,7 @@ export default function EditProfileScreen() {
           </Pressable>
 
           <Text style={[styles.title, { color: colors.text }]}>
-            Editar perfil
+            {t("editProfile")}
           </Text>
 
           <View style={{ width: 26 }} />
@@ -190,21 +193,19 @@ export default function EditProfileScreen() {
           </Pressable>
 
           <Text style={[styles.helper, { color: colors.muted }]}>
-            Pulsa la imagen para cambiar la foto
+            {t("tapImageToChange")}
           </Text>
 
           <View style={styles.form}>
             <Text style={[styles.label, { color: colors.text }]}>
-              Nombre usuario
+              {t("username")}
             </Text>
 
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="Introduce tu nombre"
-              placeholderTextColor={
-                isDark ? "rgba(255,255,255,0.45)" : "rgba(7,17,31,0.42)"
-              }
+              placeholder={t("enterName")}
+              placeholderTextColor={colors.placeholderText}
               style={[
                 styles.input,
                 {
@@ -216,7 +217,7 @@ export default function EditProfileScreen() {
             />
 
             <Text style={[styles.label, { color: colors.text }]}>
-              Correo electrónico
+              {t("email")}
             </Text>
 
             <View
@@ -234,7 +235,7 @@ export default function EditProfileScreen() {
             </View>
 
             <Text style={[styles.note, { color: colors.note }]}>
-              El correo no se puede modificar.
+              {t("emailCannotChange")}
             </Text>
 
             <Pressable
@@ -243,7 +244,7 @@ export default function EditProfileScreen() {
               disabled={loading}
             >
               <Text style={styles.saveButtonText}>
-                {loading ? "Guardando..." : "Guardar cambios"}
+                {loading ? t("saving") : t("saveChanges")}
               </Text>
             </Pressable>
           </View>

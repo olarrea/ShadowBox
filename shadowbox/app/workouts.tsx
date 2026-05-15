@@ -13,6 +13,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { router } from "expo-router";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 
 type Workout = {
   id: string;
@@ -20,6 +21,7 @@ type Workout = {
   level: string;
   estimatedMinutes: number;
   rounds?: any[];
+  createdBy?: string;
 };
 
 export default function WorkoutsScreen() {
@@ -27,6 +29,7 @@ export default function WorkoutsScreen() {
   const [loading, setLoading] = useState(true);
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -40,13 +43,21 @@ export default function WorkoutsScreen() {
     loadWorkouts();
   }, []);
 
+  function formatLevel(level: string) {
+    if (level === "basico") return t("basic");
+    if (level === "intermedio") return t("intermediate");
+    if (level === "experto") return t("expert");
+    return level;
+  }
+
   async function loadWorkouts() {
     try {
       const snap = await getDocs(collection(db, "workouts"));
+
       const data = snap.docs
         .map((doc) => ({
           id: doc.id,
-          ...(doc.data() as any),
+          ...(doc.data() as Omit<Workout, "id">),
         }))
         .filter((workout) => workout.createdBy === "system");
 
@@ -74,11 +85,31 @@ export default function WorkoutsScreen() {
     >
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={[styles.title, { color: colors.text }]}>
-          Entrenamientos
+          {t("workouts")}
         </Text>
 
         {loading ? (
           <ActivityIndicator size="large" color="#FF7A00" />
+        ) : workouts.length === 0 ? (
+          <View
+            style={[
+              styles.emptyCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <Ionicons name="albums-outline" size={34} color="#FF7A00" />
+
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              {t("noAppWorkouts")}
+            </Text>
+
+            <Text style={[styles.emptyText, { color: colors.muted }]}>
+              {t("noAppWorkoutsHint")}
+            </Text>
+          </View>
         ) : (
           workouts.map((w) => (
             <Pressable
@@ -98,8 +129,8 @@ export default function WorkoutsScreen() {
                 </Text>
 
                 <Text style={[styles.cardInfo, { color: colors.muted }]}>
-                  {w.rounds?.length || 0} rondas · {w.estimatedMinutes} min ·{" "}
-                  {w.level}
+                  {w.rounds?.length || 0} {t("rounds")} ·{" "}
+                  {w.estimatedMinutes} min · {formatLevel(w.level)}
                 </Text>
               </View>
 
@@ -127,6 +158,27 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "900",
     marginBottom: 20,
+  },
+
+  emptyCard: {
+    borderRadius: 22,
+    padding: 24,
+    alignItems: "center",
+    borderWidth: 1.5,
+    marginTop: 20,
+  },
+
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    marginTop: 12,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+
+  emptyText: {
+    textAlign: "center",
+    lineHeight: 20,
   },
 
   card: {

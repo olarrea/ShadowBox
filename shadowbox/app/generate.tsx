@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { auth, db } from "../firebaseConfig";
 import { collection, getDocs, doc, setDoc } from "firebase/firestore";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 
 type Level = "Principiante" | "Intermedio" | "Avanzado";
 type Goal = "Resistencia" | "Técnica" | "Fuerza";
@@ -44,6 +45,7 @@ export default function GenerateScreen() {
   const [generating, setGenerating] = useState(false);
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -58,7 +60,7 @@ export default function GenerateScreen() {
     iconBg: isDark ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.88)",
   };
 
-  const durationLabel = useMemo(() => `${duration} min`, [duration]);
+  const durationLabel = useMemo(() => `${duration} ${t("minutes")}`, [duration, t]);
 
   function incDays() {
     setDays((d) => Math.min(7, d + 1));
@@ -74,12 +76,24 @@ export default function GenerateScreen() {
     setDuration(options[(idx + 1) % options.length]);
   }
 
+  function translateLevel(value: Level) {
+    if (value === "Principiante") return t("beginner");
+    if (value === "Intermedio") return t("intermediate");
+    return t("advanced");
+  }
+
+  function translateGoal(value: Goal) {
+    if (value === "Resistencia") return t("endurance");
+    if (value === "Técnica") return t("technique");
+    return t("strength");
+  }
+
   async function onGenerate() {
     try {
       const user = auth.currentUser;
 
       if (!user) {
-        Alert.alert("Error", "Debes iniciar sesión.");
+        Alert.alert(t("error"), t("loginRequired"));
         return;
       }
 
@@ -107,7 +121,7 @@ export default function GenerateScreen() {
       }
 
       if (matchingWorkouts.length === 0) {
-        Alert.alert("Error", "No hay entrenamientos disponibles.");
+        Alert.alert(t("error"), t("noWorkoutsAvailable"));
         return;
       }
 
@@ -137,7 +151,7 @@ export default function GenerateScreen() {
       router.push({ pathname: "/plan" } as any);
     } catch (error) {
       console.log("ERROR GENERANDO PLAN:", error);
-      Alert.alert("Error", "No se pudo generar el plan.");
+      Alert.alert(t("error"), t("generatePlanError"));
     } finally {
       setGenerating(false);
     }
@@ -176,10 +190,12 @@ export default function GenerateScreen() {
           </Text>
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>Generar plan</Text>
+        <Text style={[styles.title, { color: colors.text }]}>
+          {t("generatePlan")}
+        </Text>
 
         <Text style={[styles.label, { color: colors.text }]}>
-          Nivel del usuario
+          {t("userLevel")}
         </Text>
 
         <Pressable
@@ -193,8 +209,9 @@ export default function GenerateScreen() {
           onPress={() => setOpenLevel((v) => !v)}
         >
           <Text style={[styles.dropdownText, { color: colors.text }]}>
-            {level}
+            {translateLevel(level)}
           </Text>
+
           <Ionicons
             name={openLevel ? "chevron-up" : "chevron-down"}
             size={18}
@@ -222,8 +239,9 @@ export default function GenerateScreen() {
                 }}
               >
                 <Text style={[styles.dropdownItemText, { color: colors.text }]}>
-                  {l}
+                  {translateLevel(l)}
                 </Text>
+
                 <Ionicons name="checkmark" size={18} color="#2E8BFF" />
               </Pressable>
             ))}
@@ -231,26 +249,28 @@ export default function GenerateScreen() {
         )}
 
         <Text style={[styles.label, { color: colors.text, marginTop: 16 }]}>
-          Objetivo
+          {t("goal")}
         </Text>
 
         <View style={styles.chipsRow}>
           <Chip
-            text="Resistencia"
+            text={translateGoal("Resistencia")}
             icon="radio-button-on-outline"
             active={goal === "Resistencia"}
             onPress={() => setGoal("Resistencia")}
             colors={colors}
           />
+
           <Chip
-            text="Técnica"
+            text={translateGoal("Técnica")}
             icon="aperture-outline"
             active={goal === "Técnica"}
             onPress={() => setGoal("Técnica")}
             colors={colors}
           />
+
           <Chip
-            text="Fuerza"
+            text={translateGoal("Fuerza")}
             icon="barbell-outline"
             active={goal === "Fuerza"}
             onPress={() => setGoal("Fuerza")}
@@ -259,7 +279,7 @@ export default function GenerateScreen() {
         </View>
 
         <Text style={[styles.label, { color: colors.text, marginTop: 16 }]}>
-          Días por semana
+          {t("daysPerWeek")}
         </Text>
 
         <View
@@ -287,7 +307,7 @@ export default function GenerateScreen() {
         </View>
 
         <Text style={[styles.label, { color: colors.text, marginTop: 16 }]}>
-          Duración máxima por sesión
+          {t("maxDuration")}
         </Text>
 
         <Pressable
@@ -303,6 +323,7 @@ export default function GenerateScreen() {
           <Text style={[styles.controlValue, { color: colors.text }]}>
             {durationLabel}
           </Text>
+
           <Ionicons name="time-outline" size={20} color="#2E8BFF" />
         </Pressable>
 
@@ -312,13 +333,16 @@ export default function GenerateScreen() {
           disabled={generating}
         >
           <Ionicons name="hand-left" size={18} color="#FFFFFF" />
+
           <Text style={styles.generateText}>
-            {generating ? "Generando..." : "Generar plan"}
+            {generating ? t("generating") : t("generatePlan")}
           </Text>
         </Pressable>
 
         <Pressable style={styles.backLink} onPress={() => router.back()}>
-          <Text style={[styles.backText, { color: colors.muted }]}>Volver</Text>
+          <Text style={[styles.backText, { color: colors.muted }]}>
+            {t("back")}
+          </Text>
         </Pressable>
       </View>
     </ImageBackground>
@@ -349,8 +373,16 @@ function Chip({
         },
       ]}
     >
-      <Ionicons name={icon} size={16} color="#FF7A00" style={{ marginRight: 8 }} />
-      <Text style={[styles.chipText, { color: colors.text }]}>{text}</Text>
+      <Ionicons
+        name={icon}
+        size={16}
+        color="#FF7A00"
+        style={{ marginRight: 8 }}
+      />
+
+      <Text style={[styles.chipText, { color: colors.text }]}>
+        {text}
+      </Text>
     </Pressable>
   );
 }

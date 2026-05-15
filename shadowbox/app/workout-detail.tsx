@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../firebaseConfig";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 import {
   collection,
   doc,
@@ -51,11 +52,6 @@ function formatSeconds(seconds: number) {
   return `${mins} min`;
 }
 
-function formatLevel(level: string) {
-  if (!level) return "Básico";
-  return level.charAt(0).toUpperCase() + level.slice(1);
-}
-
 export default function WorkoutDetailScreen() {
   const { workoutId } = useLocalSearchParams();
 
@@ -69,6 +65,8 @@ export default function WorkoutDetailScreen() {
   const [userRating, setUserRating] = useState(0);
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
+
   const isOwnWorkout = workout?.createdBy === auth.currentUser?.uid;
 
   const colors = {
@@ -90,6 +88,14 @@ export default function WorkoutDetailScreen() {
       loadRatings();
     }
   }, [workoutId]);
+
+  function formatLevel(level: string) {
+    if (!level) return t("basic");
+    if (level === "basico") return t("basic");
+    if (level === "intermedio") return t("intermediate");
+    if (level === "experto") return t("expert");
+    return level.charAt(0).toUpperCase() + level.slice(1);
+  }
 
   async function loadWorkout() {
     try {
@@ -141,8 +147,7 @@ export default function WorkoutDetailScreen() {
         total += ratingDoc.data().value || 0;
       });
 
-      const average = total / snap.docs.length;
-      setAverageRating(Number(average.toFixed(1)));
+      setAverageRating(Number((total / snap.docs.length).toFixed(1)));
 
       const user = auth.currentUser;
 
@@ -171,14 +176,14 @@ export default function WorkoutDetailScreen() {
       const user = auth.currentUser;
 
       if (!user) {
-        Alert.alert("Error", "Debes iniciar sesión para valorar.");
+        Alert.alert(t("genericError"), t("loginToRate"));
         return;
       }
 
       if (!workoutId || !workout) return;
 
       if (workout.createdBy === user.uid) {
-        Alert.alert("No disponible", "No puedes valorar un entrenamiento creado por ti.");
+        Alert.alert(t("notAvailable"), t("cannotRateOwnWorkout"));
         return;
       }
 
@@ -199,7 +204,7 @@ export default function WorkoutDetailScreen() {
       await loadRatings();
     } catch (error) {
       console.log("ERROR VALORANDO ENTRENAMIENTO:", error);
-      Alert.alert("Error", "No se pudo guardar la valoración.");
+      Alert.alert(t("genericError"), t("ratingSaveError"));
     }
   }
 
@@ -230,7 +235,7 @@ export default function WorkoutDetailScreen() {
     try {
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert("Error", "Debes iniciar sesión.");
+        Alert.alert(t("genericError"), t("loginRequired"));
         return;
       }
 
@@ -257,7 +262,7 @@ export default function WorkoutDetailScreen() {
       }
     } catch (error) {
       console.log("ERROR TOGGLE FAVORITE:", error);
-      Alert.alert("Error", "No se pudo actualizar favoritos.");
+      Alert.alert(t("genericError"), t("favoriteUpdateError"));
     } finally {
       setFavoriteLoading(false);
     }
@@ -267,7 +272,7 @@ export default function WorkoutDetailScreen() {
     try {
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert("Error", "Debes iniciar sesión.");
+        Alert.alert(t("genericError"), t("loginRequired"));
         return;
       }
 
@@ -306,7 +311,7 @@ export default function WorkoutDetailScreen() {
       }
     } catch (error) {
       console.log("ERROR TOGGLE DOWNLOAD:", error);
-      Alert.alert("Error", "No se pudo actualizar la descarga.");
+      Alert.alert(t("genericError"), t("downloadUpdateError"));
     } finally {
       setDownloadLoading(false);
     }
@@ -323,7 +328,7 @@ export default function WorkoutDetailScreen() {
   if (!workout) {
     return (
       <View style={[styles.center, { backgroundColor: colors.bg }]}>
-        <Text style={{ color: colors.text }}>No se encontró el entrenamiento</Text>
+        <Text style={{ color: colors.text }}>{t("workoutNotFound")}</Text>
       </View>
     );
   }
@@ -346,7 +351,7 @@ export default function WorkoutDetailScreen() {
           </Pressable>
 
           <Text style={[styles.topTitle, { color: colors.text }]}>
-            Entrenamiento
+            {t("workout")}
           </Text>
 
           <Pressable onPress={toggleFavorite} disabled={favoriteLoading}>
@@ -368,7 +373,7 @@ export default function WorkoutDetailScreen() {
           ]}
         >
           <Text style={[styles.heroSmall, { color: colors.muted }]}>
-            Plan actual
+            {t("currentPlan")}
           </Text>
 
           <Text style={[styles.heroTitle, { color: colors.text }]}>
@@ -382,13 +387,13 @@ export default function WorkoutDetailScreen() {
           <View style={styles.ratingMiniRow}>
             <Ionicons name="star" size={18} color="#FF7A00" />
             <Text style={[styles.ratingMiniText, { color: colors.muted }]}>
-              {averageRating}/5 valoración media
+              {averageRating}/5 {t("averageRating")}
             </Text>
           </View>
         </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Resumen
+          {t("summary")}
         </Text>
 
         <View style={styles.summaryRow}>
@@ -406,7 +411,7 @@ export default function WorkoutDetailScreen() {
               {workout.estimatedMinutes}
             </Text>
             <Text style={[styles.summaryLabel, { color: colors.muted }]}>
-              Minutos
+              {t("minutes")}
             </Text>
           </View>
 
@@ -424,7 +429,7 @@ export default function WorkoutDetailScreen() {
               {workout.rounds?.length || 0}
             </Text>
             <Text style={[styles.summaryLabel, { color: colors.muted }]}>
-              Rondas
+              {t("rounds")}
             </Text>
           </View>
 
@@ -442,13 +447,13 @@ export default function WorkoutDetailScreen() {
               {formatLevel(workout.level)}
             </Text>
             <Text style={[styles.summaryLabel, { color: colors.muted }]}>
-              Nivel
+              {t("level")}
             </Text>
           </View>
         </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Rondas del entrenamiento
+          {t("workoutRounds")}
         </Text>
 
         {workout.rounds && workout.rounds.length > 0 ? (
@@ -500,7 +505,7 @@ export default function WorkoutDetailScreen() {
                 >
                   <Ionicons name="fitness-outline" size={28} color="#FF7A00" />
                   <Text style={[styles.roundImageText, { color: colors.muted }]}>
-                    Sin imagen de referencia
+                    {t("noReferenceImage")}
                   </Text>
                 </View>
               )}
@@ -517,11 +522,10 @@ export default function WorkoutDetailScreen() {
             ]}
           >
             <Text style={[styles.noRoundsTitle, { color: colors.text }]}>
-              Este entrenamiento aún no tiene rondas cargadas
+              {t("noRoundsLoaded")}
             </Text>
             <Text style={[styles.noRoundsText, { color: colors.muted }]}>
-              Añade las rondas en Firestore para mostrar cada bloque con su
-              duración, explicación e imagen.
+              {t("noRoundsLoadedHint")}
             </Text>
           </View>
         )}
@@ -536,7 +540,7 @@ export default function WorkoutDetailScreen() {
           }
         >
           <Ionicons name="play" size={18} color="white" />
-          <Text style={styles.startBtnText}>Iniciar entrenamiento</Text>
+          <Text style={styles.startBtnText}>{t("startTraining")}</Text>
         </Pressable>
 
         <Pressable
@@ -550,7 +554,7 @@ export default function WorkoutDetailScreen() {
             color="white"
           />
           <Text style={styles.secondaryBtnText}>
-            {favorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+            {favorite ? t("removeFromFavorites") : t("addToFavorites")}
           </Text>
         </Pressable>
 
@@ -568,7 +572,7 @@ export default function WorkoutDetailScreen() {
             color="white"
           />
           <Text style={styles.secondaryBtnText}>
-            {downloaded ? "Quitar de descargados" : "Descargar entrenamiento"}
+            {downloaded ? t("removeDownloaded") : t("downloadWorkout")}
           </Text>
         </Pressable>
 
@@ -584,16 +588,16 @@ export default function WorkoutDetailScreen() {
           {isOwnWorkout ? (
             <>
               <Text style={[styles.ratingTitle, { color: colors.text }]}>
-                Tu entrenamiento
+                {t("yourWorkout")}
               </Text>
               <Text style={[styles.ownerRatingText, { color: colors.muted }]}>
-                Este entrenamiento ha sido creado por ti, por eso no puedes valorarlo.
+                {t("cannotRateOwnWorkout")}
               </Text>
             </>
           ) : (
             <>
               <Text style={[styles.ratingTitle, { color: colors.text }]}>
-                Valora este entrenamiento
+                {t("rateWorkout")}
               </Text>
 
               <View style={styles.starsRow}>
@@ -609,7 +613,7 @@ export default function WorkoutDetailScreen() {
               </View>
 
               <Text style={[styles.averageText, { color: colors.muted }]}>
-                Valoración media: {averageRating}/5
+                {t("averageRating")}: {averageRating}/5
               </Text>
             </>
           )}
@@ -620,34 +624,16 @@ export default function WorkoutDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  bg: {
-    flex: 1,
-  },
-
-  container: {
-    padding: 20,
-    paddingTop: 54,
-    paddingBottom: 32,
-  },
-
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
+  bg: { flex: 1 },
+  container: { padding: 20, paddingTop: 54, paddingBottom: 32 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 22,
   },
-
-  topTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-  },
-
+  topTitle: { fontSize: 24, fontWeight: "800" },
   heroCard: {
     borderRadius: 24,
     padding: 22,
@@ -658,48 +644,31 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
-
-  heroSmall: {
-    fontSize: 14,
-    marginBottom: 6,
-  },
-
+  heroSmall: { fontSize: 14, marginBottom: 6 },
   heroTitle: {
     fontSize: 28,
     fontWeight: "900",
     marginBottom: 10,
     lineHeight: 34,
   },
-
   heroDescription: {
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 14,
   },
-
-  ratingMiniRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-
-  ratingMiniText: {
-    fontWeight: "700",
-  },
-
+  ratingMiniRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  ratingMiniText: { fontWeight: "700" },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "800",
     marginBottom: 14,
     marginTop: 4,
   },
-
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 22,
   },
-
   summaryCard: {
     width: "31%",
     borderRadius: 18,
@@ -707,33 +676,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1.5,
   },
-
   summaryNumber: {
     fontWeight: "900",
     fontSize: 16,
     marginTop: 8,
     textAlign: "center",
   },
-
   summaryLabel: {
     fontSize: 12,
     marginTop: 5,
     textAlign: "center",
   },
-
   roundCard: {
     borderRadius: 20,
     padding: 16,
     marginBottom: 14,
     borderWidth: 1.5,
   },
-
   roundHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
   },
-
   roundNumber: {
     width: 36,
     height: 36,
@@ -743,28 +707,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-
-  roundNumberText: {
-    color: "white",
-    fontWeight: "900",
-  },
-
-  roundTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-  },
-
+  roundNumberText: { color: "white", fontWeight: "900" },
+  roundTitle: { fontSize: 17, fontWeight: "800" },
   roundDuration: {
     color: "#2E8BFF",
     marginTop: 4,
     fontWeight: "700",
   },
-
-  roundDescription: {
-    lineHeight: 20,
-    marginBottom: 14,
-  },
-
+  roundDescription: { lineHeight: 20, marginBottom: 14 },
   roundImage: {
     width: "100%",
     height: 150,
@@ -773,7 +723,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,122,0,0.35)",
   },
-
   roundImagePlaceholder: {
     height: 90,
     borderRadius: 16,
@@ -782,29 +731,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 12,
   },
-
-  roundImageText: {
-    marginTop: 8,
-    textAlign: "center",
-  },
-
+  roundImageText: { marginTop: 8, textAlign: "center" },
   noRoundsCard: {
     borderRadius: 20,
     padding: 18,
     marginBottom: 18,
     borderWidth: 1.5,
   },
-
-  noRoundsTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 8,
-  },
-
-  noRoundsText: {
-    lineHeight: 20,
-  },
-
+  noRoundsTitle: { fontSize: 16, fontWeight: "800", marginBottom: 8 },
+  noRoundsText: { lineHeight: 20 },
   startBtn: {
     marginTop: 8,
     height: 58,
@@ -815,13 +750,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
-
-  startBtnText: {
-    color: "white",
-    fontSize: 17,
-    fontWeight: "800",
-  },
-
+  startBtnText: { color: "white", fontSize: 17, fontWeight: "800" },
   secondaryBtn: {
     marginTop: 12,
     height: 54,
@@ -834,11 +763,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
-
-  secondaryBtnActive: {
-    backgroundColor: "rgba(255,122,0,0.4)",
-  },
-
+  secondaryBtnActive: { backgroundColor: "rgba(255,122,0,0.4)" },
   secondaryBlueBtn: {
     marginTop: 12,
     height: 54,
@@ -851,17 +776,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
-
-  secondaryBlueBtnActive: {
-    backgroundColor: "rgba(46,139,255,0.42)",
-  },
-
-  secondaryBtnText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-
+  secondaryBlueBtnActive: { backgroundColor: "rgba(46,139,255,0.42)" },
+  secondaryBtnText: { color: "white", fontSize: 16, fontWeight: "700" },
   ratingCard: {
     borderRadius: 20,
     padding: 18,
@@ -870,23 +786,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1.5,
   },
-
-  ratingTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    marginBottom: 14,
-  },
-
-  starsRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 14,
-  },
-
-  averageText: {
-    fontWeight: "700",
-  },
-
+  ratingTitle: { fontSize: 17, fontWeight: "800", marginBottom: 14 },
+  starsRow: { flexDirection: "row", gap: 10, marginBottom: 14 },
+  averageText: { fontWeight: "700" },
   ownerRatingText: {
     textAlign: "center",
     lineHeight: 20,

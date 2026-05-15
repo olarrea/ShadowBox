@@ -9,9 +9,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 
 export default function SettingsScreen() {
-  const { theme, setTheme, isDark } = useTheme();
+  const { theme, setTheme, isDark, language, setLanguage } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <ImageBackground
@@ -31,7 +33,7 @@ export default function SettingsScreen() {
           </Pressable>
 
           <Text style={[styles.title, { color: isDark ? "white" : "#07111F" }]}>
-            Configuración
+            {t("settings")}
           </Text>
 
           <View style={{ width: 26 }} />
@@ -64,7 +66,7 @@ export default function SettingsScreen() {
                   { color: isDark ? "white" : "#07111F" },
                 ]}
               >
-                Apariencia
+                {t("appearance")}
               </Text>
 
               <Text
@@ -77,7 +79,7 @@ export default function SettingsScreen() {
                   },
                 ]}
               >
-                Cambia entre modo oscuro y claro.
+                {t("appearanceDescription")}
               </Text>
             </View>
           </View>
@@ -90,8 +92,7 @@ export default function SettingsScreen() {
             onPress={() => setTheme("dark")}
           >
             <Ionicons name="moon-outline" size={22} color="white" />
-
-            <Text style={styles.themeOptionText}>Modo oscuro</Text>
+            <Text style={styles.themeOptionText}>{t("darkMode")}</Text>
 
             {theme === "dark" && (
               <Ionicons name="checkmark-circle" size={22} color="white" />
@@ -107,8 +108,7 @@ export default function SettingsScreen() {
             onPress={() => setTheme("light")}
           >
             <Ionicons name="sunny-outline" size={22} color="white" />
-
-            <Text style={styles.themeOptionText}>Modo claro</Text>
+            <Text style={styles.themeOptionText}>{t("lightMode")}</Text>
 
             {theme === "light" && (
               <Ionicons name="checkmark-circle" size={22} color="white" />
@@ -123,9 +123,7 @@ export default function SettingsScreen() {
               backgroundColor: isDark
                 ? "rgba(0,0,0,0.62)"
                 : "rgba(255,255,255,0.88)",
-              borderColor: isDark
-                ? "rgba(255,122,0,0.28)"
-                : "rgba(255,122,0,0.28)",
+              borderColor: "rgba(255,122,0,0.28)",
             },
           ]}
         >
@@ -148,7 +146,7 @@ export default function SettingsScreen() {
                   { color: isDark ? "white" : "#07111F" },
                 ]}
               >
-                Notificaciones
+                {t("notifications")}
               </Text>
 
               <Text
@@ -161,7 +159,7 @@ export default function SettingsScreen() {
                   },
                 ]}
               >
-                Activa recordatorios diarios para entrenar.
+                {t("notificationsDescription")}
               </Text>
             </View>
 
@@ -196,7 +194,7 @@ export default function SettingsScreen() {
                   { color: isDark ? "white" : "#07111F" },
                 ]}
               >
-                Idioma
+                {t("language")}
               </Text>
 
               <Text
@@ -209,10 +207,41 @@ export default function SettingsScreen() {
                   },
                 ]}
               >
-                Español · Próximamente configurable.
+                {t("languageDescription")}
               </Text>
             </View>
           </View>
+
+          <Pressable
+            style={[
+              styles.themeOption,
+              language === "es" && styles.themeOptionActiveOrange,
+            ]}
+            onPress={() => setLanguage("es")}
+          >
+            <Text style={styles.flag}>🇪🇸</Text>
+            <Text style={styles.themeOptionText}>{t("spanish")}</Text>
+
+            {language === "es" && (
+              <Ionicons name="checkmark-circle" size={22} color="white" />
+            )}
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.themeOption,
+              styles.themeOptionBlue,
+              language === "en" && styles.themeOptionActiveBlue,
+            ]}
+            onPress={() => setLanguage("en")}
+          >
+            <Text style={styles.flag}>🇬🇧</Text>
+            <Text style={styles.themeOptionText}>{t("english")}</Text>
+
+            {language === "en" && (
+              <Ionicons name="checkmark-circle" size={22} color="white" />
+            )}
+          </Pressable>
         </View>
       </View>
     </ImageBackground>
@@ -220,52 +249,35 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  bg: {
-    flex: 1,
-  },
-
-  container: {
-    flex: 1,
-    padding: 20,
-    paddingTop: 54,
-  },
-
+  bg: { flex: 1 },
+  container: { flex: 1, padding: 20, paddingTop: 54 },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 24,
   },
-
-  title: {
-    fontSize: 24,
-    fontWeight: "900",
-  },
-
+  title: { fontSize: 24, fontWeight: "900" },
   card: {
     borderRadius: 22,
     padding: 20,
     borderWidth: 1.5,
     marginBottom: 18,
   },
-
   settingHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
   },
-
   settingTitle: {
     fontSize: 19,
     fontWeight: "900",
     marginBottom: 4,
   },
-
   settingText: {
     fontSize: 14,
     lineHeight: 20,
   },
-
   themeOption: {
     height: 54,
     borderRadius: 17,
@@ -277,25 +289,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginTop: 18,
   },
-
   themeOptionBlue: {
     backgroundColor: "rgba(46,139,255,0.7)",
     borderColor: "rgba(46,139,255,0.8)",
   },
-
   themeOptionActiveOrange: {
     backgroundColor: "#FF7A00",
   },
-
   themeOptionActiveBlue: {
     backgroundColor: "#2E8BFF",
   },
-
   themeOptionText: {
     color: "white",
     fontSize: 16,
     fontWeight: "900",
     flex: 1,
     marginLeft: 10,
+  },
+  flag: {
+    fontSize: 22,
   },
 });

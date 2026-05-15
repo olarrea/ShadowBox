@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
+ StyleSheet,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { auth, db } from "../firebaseConfig";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 
 type Workout = {
   id: string;
@@ -28,13 +29,16 @@ export default function MyWorkoutsScreen() {
   const [loading, setLoading] = useState(true);
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
     text: isDark ? "#FFFFFF" : "#07111F",
     muted: isDark ? "rgba(255,255,255,0.72)" : "rgba(7,17,31,0.68)",
     card: isDark ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.92)",
-    blueBorder: isDark ? "rgba(46,139,255,0.35)" : "rgba(46,139,255,0.35)",
+    blueBorder: isDark
+      ? "rgba(46,139,255,0.35)"
+      : "rgba(46,139,255,0.35)",
   };
 
   useEffect(() => {
@@ -52,6 +56,7 @@ export default function MyWorkoutsScreen() {
       );
 
       const snap = await getDocs(q);
+
       const data = snap.docs.map((docSnap) => ({
         id: docSnap.id,
         ...(docSnap.data() as Omit<Workout, "id">),
@@ -90,7 +95,7 @@ export default function MyWorkoutsScreen() {
           </Pressable>
 
           <Text style={[styles.title, { color: colors.text }]}>
-            Mis entrenos
+            {t("myWorkouts")}
           </Text>
 
           <View style={{ width: 26 }} />
@@ -99,8 +104,9 @@ export default function MyWorkoutsScreen() {
         {loading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="large" color="#2E8BFF" />
+
             <Text style={[styles.loadingText, { color: colors.text }]}>
-              Cargando tus entrenamientos...
+              {t("loadingYourWorkouts")}
             </Text>
           </View>
         ) : workouts.length === 0 ? (
@@ -113,15 +119,18 @@ export default function MyWorkoutsScreen() {
               },
             ]}
           >
-            <Ionicons name="create-outline" size={34} color="#2E8BFF" />
+            <Ionicons
+              name="create-outline"
+              size={34}
+              color="#2E8BFF"
+            />
 
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              Aún no has creado entrenamientos
+              {t("noCreatedWorkouts")}
             </Text>
 
             <Text style={[styles.emptyText, { color: colors.muted }]}>
-              Puedes crear tus propias rutinas desde el botón “Crear entrenamiento”
-              de la pantalla Home.
+              {t("createWorkoutHint")}
             </Text>
           </View>
         ) : (
@@ -144,15 +153,19 @@ export default function MyWorkoutsScreen() {
 
                 <Text style={[styles.cardInfo, { color: colors.muted }]}>
                   {(workout.rounds?.length || 0) > 0
-                    ? `${workout.rounds?.length} rondas`
-                    : "Rondas por definir"}{" "}
+                    ? `${workout.rounds?.length} ${t("rounds")}`
+                    : t("roundsUndefined")}{" "}
                   · {workout.estimatedMinutes} min ·{" "}
                   {workout.level.charAt(0).toUpperCase() +
                     workout.level.slice(1)}
                 </Text>
               </View>
 
-              <Ionicons name="chevron-forward" size={24} color="#2E8BFF" />
+              <Ionicons
+                name="chevron-forward"
+                size={24}
+                color="#2E8BFF"
+              />
             </Pressable>
           ))
         )}

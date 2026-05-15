@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
+ StyleSheet,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { auth, db } from "../firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 
 type FavoriteWorkout = {
   id: string;
@@ -28,6 +29,7 @@ export default function FavoritesScreen() {
   const [loading, setLoading] = useState(true);
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -46,12 +48,14 @@ export default function FavoritesScreen() {
   async function loadFavorites() {
     try {
       const user = auth.currentUser;
+
       if (!user) {
         setFavorites([]);
         return;
       }
 
       const favRef = collection(db, "users", user.uid, "favorites");
+
       const snapshot = await getDocs(favRef);
 
       const data: FavoriteWorkout[] = snapshot.docs.map((docSnap) => ({
@@ -92,7 +96,7 @@ export default function FavoritesScreen() {
           </Pressable>
 
           <Text style={[styles.title, { color: colors.text }]}>
-            Favoritos
+            {t("favorites")}
           </Text>
 
           <View style={{ width: 26 }} />
@@ -101,8 +105,9 @@ export default function FavoritesScreen() {
         {loading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="large" color="#FF7A00" />
+
             <Text style={[styles.loadingText, { color: colors.text }]}>
-              Cargando favoritos...
+              {t("loadingFavorites")}
             </Text>
           </View>
         ) : favorites.length === 0 ? (
@@ -118,11 +123,11 @@ export default function FavoritesScreen() {
             <Ionicons name="heart-outline" size={34} color="#FF7A00" />
 
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              Aún no tienes favoritos
+              {t("noFavorites")}
             </Text>
 
             <Text style={[styles.emptyText, { color: colors.muted }]}>
-              Añade entrenamientos desde el detalle para verlos aquí.
+              {t("favoritesHint")}
             </Text>
           </View>
         ) : (
@@ -145,8 +150,8 @@ export default function FavoritesScreen() {
 
                 <Text style={[styles.cardInfo, { color: colors.muted }]}>
                   {(workout.rounds?.length || 0) > 0
-                    ? `${workout.rounds?.length} rondas`
-                    : "Rondas por definir"}{" "}
+                    ? `${workout.rounds?.length} ${t("rounds")}`
+                    : t("roundsUndefined")}{" "}
                   · {workout.estimatedMinutes} min ·{" "}
                   {workout.level.charAt(0).toUpperCase() +
                     workout.level.slice(1)}

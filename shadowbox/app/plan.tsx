@@ -14,6 +14,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { auth, db } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { useTheme } from "../themeContext";
+import { useTranslation } from "../utils/useTranslation";
 
 type PlanWorkout = {
   day: number;
@@ -38,6 +39,7 @@ export default function PlanScreen() {
   const [loading, setLoading] = useState(true);
 
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -55,6 +57,20 @@ export default function PlanScreen() {
       loadPlan();
     }, [])
   );
+
+  function formatLevel(level: string) {
+    if (level === "basico") return t("basic");
+    if (level === "intermedio") return t("intermediate");
+    if (level === "experto") return t("expert");
+    return level;
+  }
+
+  function formatGoal(goal: string) {
+    if (goal === "Resistencia") return t("endurance");
+    if (goal === "Técnica") return t("technique");
+    if (goal === "Fuerza") return t("strength");
+    return goal;
+  }
 
   async function loadPlan() {
     try {
@@ -99,7 +115,7 @@ export default function PlanScreen() {
           </Pressable>
 
           <Text style={[styles.title, { color: colors.text }]}>
-            Plan generado
+            {t("generatedPlan")}
           </Text>
 
           <View style={{ width: 26 }} />
@@ -108,8 +124,9 @@ export default function PlanScreen() {
         {loading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="large" color="#FF7A00" />
+
             <Text style={[styles.loadingText, { color: colors.text }]}>
-              Cargando plan...
+              {t("loadingPlan")}
             </Text>
           </View>
         ) : !plan ? (
@@ -125,11 +142,11 @@ export default function PlanScreen() {
             <Ionicons name="navigate-outline" size={34} color="#FF7A00" />
 
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              No hay plan generado
+              {t("noGeneratedPlan")}
             </Text>
 
             <Text style={[styles.emptyText, { color: colors.muted }]}>
-              Genera un plan desde la pantalla anterior para verlo aquí.
+              {t("generatePlanHint")}
             </Text>
           </View>
         ) : (
@@ -144,16 +161,17 @@ export default function PlanScreen() {
               ]}
             >
               <Text style={[styles.heroSmall, { color: colors.muted }]}>
-                Objetivo
+                {t("goal")}
               </Text>
 
               <Text style={[styles.heroTitle, { color: colors.text }]}>
-                {plan.goal}
+                {formatGoal(plan.goal)}
               </Text>
 
               <Text style={[styles.heroText, { color: colors.muted }]}>
-                {plan.days} días por semana · {plan.duration} min máximo · Nivel{" "}
-                {plan.level}
+                {plan.days} {t("daysPerWeek").toLowerCase()} · {plan.duration}{" "}
+                min {t("maximum").toLowerCase()} · {t("level")}{" "}
+                {formatLevel(plan.level)}
               </Text>
             </View>
 
@@ -174,15 +192,17 @@ export default function PlanScreen() {
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>Día {workout.day}</Text>
+                  <Text style={styles.cardTitle}>
+                    {t("day")} {workout.day}
+                  </Text>
 
                   <Text style={[styles.workoutTitle, { color: colors.text }]}>
                     {workout.title}
                   </Text>
 
                   <Text style={[styles.cardInfo, { color: colors.muted }]}>
-                    {workout.roundsCount} rondas · {workout.estimatedMinutes} min
-                    · {workout.level}
+                    {workout.roundsCount} {t("rounds")} ·{" "}
+                    {workout.estimatedMinutes} min · {formatLevel(workout.level)}
                   </Text>
                 </View>
 

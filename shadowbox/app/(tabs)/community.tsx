@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { auth, db } from "../../firebaseConfig";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { useTheme } from "../../themeContext";
+import { useTranslation } from "../../utils/useTranslation";
 
 type Workout = {
   id: string;
@@ -28,7 +29,9 @@ type Workout = {
 export default function CommunityScreen() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
+
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const colors = {
     bg: isDark ? "#070A0F" : "#F3F6FB",
@@ -115,7 +118,7 @@ export default function CommunityScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerRow}>
           <Text style={[styles.title, { color: colors.text }]}>
-            Comunidad
+            {t("community")}
           </Text>
 
           <View
@@ -149,25 +152,13 @@ export default function CommunityScreen() {
             </View>
 
             <View>
-              <Text
-                style={[styles.leaderboardTitle, { color: colors.text }]}
-              >
-                Ranking global
-              </Text>
-
-              <Text
-                style={[styles.leaderboardSubtitle, { color: colors.muted }]}
-              >
-                Mira los mejores boxeadores de ShadowBox
+              <Text style={[styles.leaderboardTitle, { color: colors.text }]}>
+                {t("ranking")}
               </Text>
             </View>
           </View>
 
-          <Ionicons
-            name="chevron-forward"
-            size={22}
-            color="#2E8BFF"
-          />
+          <Ionicons name="chevron-forward" size={22} color="#2E8BFF" />
         </Pressable>
 
         {loading ? (
@@ -175,7 +166,7 @@ export default function CommunityScreen() {
             <ActivityIndicator size="large" color="#FF7A00" />
 
             <Text style={[styles.loadingText, { color: colors.text }]}>
-              Cargando entrenamientos...
+              {t("loading")}
             </Text>
           </View>
         ) : workouts.length === 0 ? (
@@ -191,11 +182,11 @@ export default function CommunityScreen() {
             <Ionicons name="people-outline" size={34} color="#2E8BFF" />
 
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              Aún no hay entrenamientos compartidos
+              {t("noCommunityWorkouts")}
             </Text>
 
             <Text style={[styles.emptyText, { color: colors.muted }]}>
-              Cuando otros usuarios creen entrenamientos aparecerán aquí.
+              {t("communityWorkoutsInfo")}
             </Text>
           </View>
         ) : (
@@ -234,13 +225,24 @@ export default function CommunityScreen() {
                   </Text>
 
                   <Text style={[styles.authorText, { color: colors.muted }]}>
-                    por {workout.createdByName || "Usuario"}
+                    {t("by")} {workout.createdByName || "Usuario"}
                   </Text>
 
                   <View style={styles.badgeRow}>
                     <View style={styles.levelBadge}>
-                      <Text style={styles.levelBadgeText}>
-                        {workout.level}
+                      <Text style={styles.levelBadgeText}>{workout.level}</Text>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.infoBadge,
+                        { backgroundColor: colors.badgeBg },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.infoBadgeText, { color: colors.text }]}
+                      >
+                        {workout.estimatedMinutes} {t("minutes")}
                       </Text>
                     </View>
 
@@ -253,20 +255,7 @@ export default function CommunityScreen() {
                       <Text
                         style={[styles.infoBadgeText, { color: colors.text }]}
                       >
-                        {workout.estimatedMinutes} min
-                      </Text>
-                    </View>
-
-                    <View
-                      style={[
-                        styles.infoBadge,
-                        { backgroundColor: colors.badgeBg },
-                      ]}
-                    >
-                      <Text
-                        style={[styles.infoBadgeText, { color: colors.text }]}
-                      >
-                        {workout.rounds?.length || 0} rondas
+                        {workout.rounds?.length || 0} {t("rounds")}
                       </Text>
                     </View>
                   </View>
@@ -285,7 +274,7 @@ export default function CommunityScreen() {
                 style={styles.btn}
                 onPress={() => openWorkout(workout.id)}
               >
-                <Text style={styles.btnText}>VER ENTRENAMIENTO</Text>
+                <Text style={styles.btnText}>{t("viewWorkout")}</Text>
               </Pressable>
             </View>
           ))
