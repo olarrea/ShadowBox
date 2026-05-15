@@ -114,7 +114,9 @@ export default function CommunityScreen() {
     >
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerRow}>
-          <Text style={[styles.title, { color: colors.text }]}>Comunidad</Text>
+          <Text style={[styles.title, { color: colors.text }]}>
+            Comunidad
+          </Text>
 
           <View
             style={[
@@ -131,9 +133,47 @@ export default function CommunityScreen() {
           </View>
         </View>
 
+        <Pressable
+          style={[
+            styles.leaderboardBtn,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.orangeBorder,
+            },
+          ]}
+          onPress={() => router.push("/leaderboard")}
+        >
+          <View style={styles.leaderboardLeft}>
+            <View style={styles.leaderboardIcon}>
+              <Ionicons name="trophy" size={22} color="#FF7A00" />
+            </View>
+
+            <View>
+              <Text
+                style={[styles.leaderboardTitle, { color: colors.text }]}
+              >
+                Ranking global
+              </Text>
+
+              <Text
+                style={[styles.leaderboardSubtitle, { color: colors.muted }]}
+              >
+                Mira los mejores boxeadores de ShadowBox
+              </Text>
+            </View>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color="#2E8BFF"
+          />
+        </Pressable>
+
         {loading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="large" color="#FF7A00" />
+
             <Text style={[styles.loadingText, { color: colors.text }]}>
               Cargando entrenamientos...
             </Text>
@@ -199,7 +239,9 @@ export default function CommunityScreen() {
 
                   <View style={styles.badgeRow}>
                     <View style={styles.levelBadge}>
-                      <Text style={styles.levelBadgeText}>{workout.level}</Text>
+                      <Text style={styles.levelBadgeText}>
+                        {workout.level}
+                      </Text>
                     </View>
 
                     <View
@@ -283,6 +325,42 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  leaderboardBtn: {
+    height: 82,
+    borderRadius: 22,
+    borderWidth: 2,
+    paddingHorizontal: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 22,
+  },
+
+  leaderboardLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+
+  leaderboardIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "rgba(255,122,0,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  leaderboardTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+  },
+
+  leaderboardSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
   },
 
   loadingWrap: {

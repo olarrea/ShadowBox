@@ -43,10 +43,13 @@ export default function WorkoutsScreen() {
   async function loadWorkouts() {
     try {
       const snap = await getDocs(collection(db, "workouts"));
-      const data = snap.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as any),
-      }));
+      const data = snap.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as any),
+        }))
+        .filter((workout) => workout.createdBy === "system");
+
       setWorkouts(data);
     } catch (e) {
       console.log("ERROR CARGANDO WORKOUTS:", e);

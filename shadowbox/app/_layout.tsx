@@ -22,6 +22,7 @@ export default function RootLayout() {
         <Stack.Screen name="create-workout" />
         <Stack.Screen name="notifications-settings" />
         <Stack.Screen name="settings" />
+        <Stack.Screen name="leaderboard" />
       </Stack>
     </ThemeProvider>
   );
